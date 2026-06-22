@@ -194,10 +194,27 @@ run-status overlay. You supply the data adapter (load via `loadDraft`, save via
 auth/router wrapper. It deliberately does NOT ship a Next.js shell, an API client,
 or auth — those were the Mate-X-locked parts.
 
+### Try it: the playground
+
+[`examples/playground`](./examples/playground) is a full Vite app wiring
+`@openworkflow/react` to `@openworkflow/server` — one `pnpm dev` boots a working
+builder with a node palette, a seeded workflow, save, and a Run button that streams
+live node status onto the canvas:
+
+```bash
+pnpm install && pnpm build
+pnpm --filter @openworkflow/example-playground dev   # http://localhost:5173
+```
+
+The playground also serves as the reference auth/router wrapper to copy: it owns
+data loading, persistence, and the SSE run loop; the library contributes only the
+canvas + store.
+
 ## Roadmap
 
-- A Vite playground app wiring `@openworkflow/react` to `@openworkflow/server` end to end
 - npm publish hardening (dual ESM/CJS, pinned peer deps, more examples)
+- An inspector panel for editing node inputs in the builder
+- A multi-tenant `CatalogPolicy` example adapter
 
 ## License
 

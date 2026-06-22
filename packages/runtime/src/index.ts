@@ -20,6 +20,7 @@ import {
   type CatalogResult,
   type WorkflowWithGraph,
   type NodeSpec,
+  type WorkflowNodeOutput,
   type WorkflowEvent,
   type WorkflowEventListener,
 } from '@openworkflow/core';
@@ -104,7 +105,7 @@ export class WorkflowEngine {
   }
 
   /** Register a node spec (built-in or custom). Chainable. */
-  registerNode(spec: NodeSpec): this {
+  registerNode<TInput, TOutput extends WorkflowNodeOutput>(spec: NodeSpec<TInput, TOutput>): this {
     this.registry.register(spec);
     return this;
   }

@@ -1,4 +1,4 @@
-import type { NodeSpec, NodeType, McpNodeResolver } from '@openworkflow/core';
+import type { NodeSpec, NodeType, McpNodeResolver, WorkflowNodeOutput } from '@openworkflow/core';
 
 export interface NodeResolveContext {
   userId?: string;
@@ -21,11 +21,11 @@ export class NodeSpecRegistry {
 
   constructor(private readonly mcpResolver?: McpNodeResolver) {}
 
-  register(spec: NodeSpec): this {
+  register<TInput, TOutput extends WorkflowNodeOutput>(spec: NodeSpec<TInput, TOutput>): this {
     if (this.specs.has(spec.key)) {
       throw new Error(`Duplicate NodeSpec: ${spec.key}`);
     }
-    this.specs.set(spec.key, spec);
+    this.specs.set(spec.key, spec as NodeSpec);
     return this;
   }
 
