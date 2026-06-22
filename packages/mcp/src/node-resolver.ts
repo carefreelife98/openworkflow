@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   NOOP_LOGGER,
   PipelineNodeExecutionError,
@@ -11,6 +10,8 @@ import {
   type McpNodeSpecMeta,
   type Logger,
 } from '@openpipeline/core';
+import { z } from 'zod';
+
 import { McpSchemaConverter } from './schema-converter.js';
 
 export interface ParsedMcpKey {
@@ -120,7 +121,7 @@ export class McpNodeResolverImpl implements McpNodeResolver {
       meta: { mcp: meta },
     };
 
-    return spec as NodeSpec;
+    return spec;
   }
 
   private synthesizeOutputSchema(
@@ -138,6 +139,6 @@ export class McpNodeResolverImpl implements McpNodeResolver {
       providerKey: z.string(),
       toolName: z.string(),
       output: result.zodSchema,
-    }) as unknown as z.ZodType<McpToolNodeOutput>;
+    });
   }
 }

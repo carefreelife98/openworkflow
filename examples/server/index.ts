@@ -4,11 +4,12 @@
  * deps beyond the OpenPipeline packages.
  */
 import { createServer } from 'node:http';
-import { PipelineEngine } from '@openpipeline/runtime';
-import { createIfNodeSpec } from '@openpipeline/nodes';
-import { MemoryStore } from '@openpipeline/store-memory';
-import { createPipelineHandlers, createNodeHttpHandler } from '@openpipeline/server';
+
 import { defineNode } from '@openpipeline/core';
+import { createIfNodeSpec } from '@openpipeline/nodes';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { createPipelineHandlers, createNodeHttpHandler } from '@openpipeline/server';
+import { MemoryStore } from '@openpipeline/store-memory';
 import { z } from 'zod';
 
 // ── Build an engine ─────────────────────────────────────────────────────────

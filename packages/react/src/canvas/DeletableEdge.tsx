@@ -59,7 +59,9 @@ export function DeletableEdge(props: EdgeProps): React.JSX.Element {
           )}
           {data?.onDelete && (
             <button
-              onClick={() => data.onDelete!(id)}
+              onClick={() => {
+                data.onDelete!(id);
+              }}
               title="Delete"
               style={{
                 width: 16,

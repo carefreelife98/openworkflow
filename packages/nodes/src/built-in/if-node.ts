@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { defineNode, type NodeSpec, type IfNodeOutput } from '@openpipeline/core';
+import { z } from 'zod';
 
 export const IfInputSchema = z.object({
   condition: z

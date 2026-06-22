@@ -1,5 +1,5 @@
-import type { PipelineEngine } from '@openpipeline/runtime';
 import type { PipelineDraft, RunContext, PipelineEvent } from '@openpipeline/core';
+import type { PipelineEngine } from '@openpipeline/runtime';
 
 /**
  * Transport-agnostic pipeline handlers. These are plain async functions with no

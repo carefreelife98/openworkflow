@@ -1,3 +1,5 @@
+import type { StructuredTool } from '@langchain/core/tools';
+import type { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import {
   NOOP_LOGGER,
   type CatalogLoader,
@@ -6,11 +8,10 @@ import {
   type ResolvedTool,
   type Logger,
 } from '@openpipeline/core';
-import type { MultiServerMCPClient } from '@langchain/mcp-adapters';
-import type { StructuredTool } from '@langchain/core/tools';
-import type { McpServerConfig } from './types.js';
+
 import type { CatalogPolicy, PolicyContext } from './catalog-policy.js';
 import { createClient, getFilteredTools, getRawSchemas } from './client-factory.js';
+import type { McpServerConfig } from './types.js';
 
 export interface EnvCatalogLoaderOptions {
   servers: McpServerConfig[];
@@ -22,7 +23,7 @@ export interface EnvCatalogLoaderOptions {
 /** Unwrap the MCP `tools/call` response, preferring `structuredContent`. */
 function unwrapToolResult(raw: unknown): unknown {
   if (raw && typeof raw === 'object' && 'structuredContent' in raw) {
-    return (raw as { structuredContent: unknown }).structuredContent;
+    return raw.structuredContent;
   }
   return raw;
 }

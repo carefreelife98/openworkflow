@@ -18,10 +18,10 @@
  * MOCK CatalogLoader that satisfies the same interface. The engine → resolver →
  * tool.invoke path is exactly the same as with a real server.
  */
+import type { CatalogLoader } from '@openpipeline/core';
+import { McpNodeResolverImpl } from '@openpipeline/mcp';
 import { PipelineEngine } from '@openpipeline/runtime';
 import { MemoryStore } from '@openpipeline/store-memory';
-import { McpNodeResolverImpl } from '@openpipeline/mcp';
-import type { CatalogLoader } from '@openpipeline/core';
 
 // A mock CatalogLoader exposing one "weather" provider with one tool.
 const mockCatalogLoader: CatalogLoader = {

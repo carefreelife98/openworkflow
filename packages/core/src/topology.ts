@@ -26,8 +26,8 @@ export function analyzeTopology(
   return {
     entryNodes,
     exitNodes,
-    predecessorsByNode: predecessors as ReadonlyMap<string, readonly string[]>,
-    successorsByNode: successors as ReadonlyMap<string, readonly string[]>,
+    predecessorsByNode: predecessors,
+    successorsByNode: successors,
   };
 }
 

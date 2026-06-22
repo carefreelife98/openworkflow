@@ -11,10 +11,10 @@
  * The store's logic (diff save, sequenced steps, atomic cost SQL path) is
  * exercised exactly as it would be against a real client.
  */
-import { PipelineEngine } from '@openpipeline/runtime';
-import { createIfNodeSpec } from '@openpipeline/nodes';
-import { PrismaPipelineStore, type PrismaClientLike } from '@openpipeline/store-prisma';
 import { defineNode } from '@openpipeline/core';
+import { createIfNodeSpec } from '@openpipeline/nodes';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { PrismaPipelineStore, type PrismaClientLike } from '@openpipeline/store-prisma';
 import { z } from 'zod';
 
 // ── Minimal in-memory fake satisfying PrismaClientLike ──────────────────────
@@ -32,7 +32,7 @@ function createFakePrisma(): PrismaClientLike {
   const matches = (row: Record<string, unknown>, where: unknown): boolean => {
     if (!where || typeof where !== 'object') return true;
     for (const [k, v] of Object.entries(where as Record<string, unknown>)) {
-      if (v && typeof v === 'object' && 'in' in (v as object)) {
+      if (v && typeof v === 'object' && 'in' in v) {
         if (!(v as { in: unknown[] }).in.includes(row[k])) return false;
       } else if (row[k] !== v) return false;
     }

@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import {
   computeAncestors,
   computeRemainingSchema,
@@ -22,8 +21,10 @@ import {
   type StepRecorder,
   type Logger,
 } from '@openpipeline/core';
-import type { ValueBindingResolver } from './value-binding-resolver.js';
+import { z } from 'zod';
+
 import type { AutoParamResolver } from './auto-param-resolver.js';
+import type { ValueBindingResolver } from './value-binding-resolver.js';
 
 export interface NodeRunnerDeps {
   bindingResolver: Pick<ValueBindingResolver, 'resolveExplicit'>;
@@ -76,7 +77,7 @@ export function makeNodeRunner(
     try {
       checkAbort(signal);
 
-      const inputs = (node.inputs as NodeInputs) ?? {};
+      const inputs = node.inputs ?? {};
       const explicit = deps.bindingResolver.resolveExplicit(inputs, state, {
         nodeId: node.id,
         nodeLabel: node.label,
@@ -101,9 +102,7 @@ export function makeNodeRunner(
         // unspecified keys — leaving unspecified keys would let the resolver
         // fill optional slots and override the author's intent (unset = default).
         const allInputKeys =
-          spec.inputSchema instanceof z.ZodObject
-            ? Object.keys((spec.inputSchema as z.ZodObject).shape)
-            : [];
+          spec.inputSchema instanceof z.ZodObject ? Object.keys(spec.inputSchema.shape) : [];
         const keysToOmit = allInputKeys.filter((k) => !autoSlots.includes(k));
         const remainingSchema = computeRemainingSchema(spec.inputSchema, keysToOmit);
 
@@ -128,10 +127,10 @@ export function makeNodeRunner(
 
       checkAbort(signal);
       const ctx = buildExecutionContext(node, state, stepId, deps, costAcc, signal, logger);
-      const output = await spec.handler(parsed as never, ctx);
+      const output = await spec.handler(parsed, ctx);
 
       checkAbort(signal);
-      const validatedOutput = spec.outputSchema.parse(output) as PipelineNodeOutput;
+      const validatedOutput = spec.outputSchema.parse(output);
 
       const finishedAt = new Date().toISOString();
       const totalCost = costAcc.total();
@@ -197,7 +196,9 @@ function buildExecutionContext(
     },
     createChildStep: async () => ({ childStepId: '' }),
     finishChildStep: async () => undefined,
-    reportCost: (c: CostBundle) => costAcc.add(c),
+    reportCost: (c: CostBundle) => {
+      costAcc.add(c);
+    },
     createLLM: (modelId, overrides) => deps.llmFactory.createModel(modelId, overrides),
     logger,
     mcpCatalogCache: state.meta.mcpCatalogCache,

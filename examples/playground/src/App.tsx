@@ -134,7 +134,9 @@ export function App(): React.JSX.Element {
         {catalog.map((spec) => (
           <button
             key={spec.key}
-            onClick={() => addNode(spec)}
+            onClick={() => {
+              addNode(spec);
+            }}
             style={{
               textAlign: 'left',
               padding: '6px 8px',

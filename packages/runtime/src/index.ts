@@ -182,7 +182,14 @@ export class PipelineEngine {
     this.inFlight.set(runId, controller);
     if (opts.signal) {
       if (opts.signal.aborted) controller.abort();
-      else opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      else
+        opts.signal.addEventListener(
+          'abort',
+          () => {
+            controller.abort();
+          },
+          { once: true }
+        );
     }
 
     const done = this.execute(graph, runId, deliveryMode, opts.context, controller).finally(() => {
@@ -203,7 +210,9 @@ export class PipelineEngine {
   ): Promise<RunResult> {
     const hasMcpNode = graph.nodes.some((n) => n.key.startsWith('mcp:'));
     let mcpCatalog: CatalogResult | undefined;
-    const timer = setTimeout(() => controller.abort(), this.runTimeoutMs);
+    const timer = setTimeout(() => {
+      controller.abort();
+    }, this.runTimeoutMs);
 
     try {
       if (hasMcpNode) {

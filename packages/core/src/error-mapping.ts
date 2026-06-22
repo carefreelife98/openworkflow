@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import type { PipelineError } from './state.js';
 
 /** Normalize any thrown value into a structured PipelineError. */

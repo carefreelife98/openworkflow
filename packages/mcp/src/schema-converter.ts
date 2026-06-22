@@ -13,9 +13,9 @@
  * fallback — the caller excludes such tools from the catalog. MCP servers using
  * those constructs will have tools silently absent; this is documented, not hidden.
  */
+import { NOOP_LOGGER, type Logger } from '@openpipeline/core';
 import { z } from 'zod';
 import { fromJSONSchema } from 'zod/v4';
-import { NOOP_LOGGER, type Logger } from '@openpipeline/core';
 
 export type ConversionFailureReason = {
   kind: 'fromJsonSchema_throw';
@@ -103,7 +103,7 @@ export class McpSchemaConverter {
   convert(jsonSchema: unknown, opts: ConvertOptions): McpSchemaConversionResult {
     const derefed = ensureRootObjectType(dereferenceAllRefs(jsonSchema));
     try {
-      const zodSchema = fromJSONSchema(derefed as never) as z.ZodType;
+      const zodSchema = fromJSONSchema(derefed as never);
       return { success: true, zodSchema };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);

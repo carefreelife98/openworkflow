@@ -2,7 +2,9 @@
 // START/END markers are display-only — never stored in state or persisted.
 // Faithful port; the only change is local types and English marker labels.
 import type { Node as RfNode, Edge as RfEdge } from '@xyflow/react';
+
 import type { BuilderNode, BuilderEdge } from '../types.js';
+
 import {
   START_MARKER_ID,
   END_MARKER_ID,

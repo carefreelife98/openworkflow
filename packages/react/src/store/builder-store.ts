@@ -1,5 +1,6 @@
-import { create } from 'zustand';
 import type { ValueBinding, PipelineDraft } from '@openpipeline/core';
+import { create } from 'zustand';
+
 import type { BuilderNode, BuilderEdge } from '../types.js';
 
 /** Derive entry (no incoming) and exit (no outgoing) nodes. */
@@ -130,12 +131,18 @@ export function createBuilderStore() {
       });
     },
 
-    setName: (name) => set({ name, dirty: true }),
-    setDescription: (description) => set({ description, dirty: true }),
+    setName: (name) => {
+      set({ name, dirty: true });
+    },
+    setDescription: (description) => {
+      set({ description, dirty: true });
+    },
 
-    addNode: (node) => set((s) => ({ nodes: [...s.nodes, node], dirty: true })),
+    addNode: (node) => {
+      set((s) => ({ nodes: [...s.nodes, node], dirty: true }));
+    },
 
-    removeNode: (id) =>
+    removeNode: (id) => {
       set((s) => ({
         nodes: s.nodes.filter((n) => n.id !== id),
         edges: s.edges.filter((e) => e.fromNodeId !== id && e.toNodeId !== id),
@@ -143,15 +150,17 @@ export function createBuilderStore() {
         endSources: s.endSources.filter((t) => t !== id),
         selectedNodeId: s.selectedNodeId === id ? null : s.selectedNodeId,
         dirty: true,
-      })),
+      }));
+    },
 
-    updateNodePosition: (id, x, y) =>
+    updateNodePosition: (id, x, y) => {
       set((s) => ({
         nodes: s.nodes.map((n) => (n.id === id ? { ...n, positionX: x, positionY: y } : n)),
         dirty: true,
-      })),
+      }));
+    },
 
-    setNodePositions: (positions) =>
+    setNodePositions: (positions) => {
       set((s) => {
         const byId = new Map(positions.map((p) => [p.id, p]));
         let changed = false;
@@ -162,27 +171,31 @@ export function createBuilderStore() {
           return { ...n, positionX: p.x, positionY: p.y };
         });
         return changed ? { nodes, dirty: true } : {};
-      }),
+      });
+    },
 
-    updateMarkerPosition: (which, x, y) =>
+    updateMarkerPosition: (which, x, y) => {
       set((s) =>
         which === 'start'
           ? { startMarker: { x, y }, dirty: true }
           : { endMarker: { x, y }, dirty: true }
-      ),
+      );
+    },
 
-    updateNodeLabel: (id, label) =>
-      set((s) => ({ nodes: s.nodes.map((n) => (n.id === id ? { ...n, label } : n)), dirty: true })),
+    updateNodeLabel: (id, label) => {
+      set((s) => ({ nodes: s.nodes.map((n) => (n.id === id ? { ...n, label } : n)), dirty: true }));
+    },
 
-    updateNodeInput: (nodeId, paramName, binding) =>
+    updateNodeInput: (nodeId, paramName, binding) => {
       set((s) => ({
         nodes: s.nodes.map((n) =>
           n.id === nodeId ? { ...n, inputs: { ...n.inputs, [paramName]: binding } } : n
         ),
         dirty: true,
-      })),
+      }));
+    },
 
-    removeNodeInput: (nodeId, paramName) =>
+    removeNodeInput: (nodeId, paramName) => {
       set((s) => ({
         nodes: s.nodes.map((n) => {
           if (n.id !== nodeId) return n;
@@ -191,9 +204,10 @@ export function createBuilderStore() {
           return { ...n, inputs };
         }),
         dirty: true,
-      })),
+      }));
+    },
 
-    addEdge: (edge) =>
+    addEdge: (edge) => {
       set((s) => {
         const dup = s.edges.find(
           (e) =>
@@ -203,31 +217,41 @@ export function createBuilderStore() {
         );
         if (dup) return {};
         return { edges: [...s.edges, edge], dirty: true };
-      }),
+      });
+    },
 
-    removeEdge: (edgeId) =>
+    removeEdge: (edgeId) => {
       set((s) => {
         const edges = s.edges.filter((e) => e.id !== edgeId);
         return edges.length !== s.edges.length ? { edges, dirty: true } : {};
-      }),
+      });
+    },
 
-    addStartTarget: (nodeId) =>
+    addStartTarget: (nodeId) => {
       set((s) =>
         s.startTargets.includes(nodeId)
           ? {}
           : { startTargets: [...s.startTargets, nodeId], dirty: true }
-      ),
-    removeStartTarget: (nodeId) =>
-      set((s) => ({ startTargets: s.startTargets.filter((t) => t !== nodeId), dirty: true })),
-    addEndSource: (nodeId) =>
+      );
+    },
+    removeStartTarget: (nodeId) => {
+      set((s) => ({ startTargets: s.startTargets.filter((t) => t !== nodeId), dirty: true }));
+    },
+    addEndSource: (nodeId) => {
       set((s) =>
         s.endSources.includes(nodeId) ? {} : { endSources: [...s.endSources, nodeId], dirty: true }
-      ),
-    removeEndSource: (nodeId) =>
-      set((s) => ({ endSources: s.endSources.filter((t) => t !== nodeId), dirty: true })),
+      );
+    },
+    removeEndSource: (nodeId) => {
+      set((s) => ({ endSources: s.endSources.filter((t) => t !== nodeId), dirty: true }));
+    },
 
-    selectNode: (id) => set({ selectedNodeId: id }),
-    markClean: () => set({ dirty: false }),
+    selectNode: (id) => {
+      set({ selectedNodeId: id });
+    },
+    markClean: () => {
+      set({ dirty: false });
+    },
 
     toDraft(): PipelineDraft {
       const s = get();

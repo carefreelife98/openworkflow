@@ -1,5 +1,5 @@
-import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import type { StructuredTool } from '@langchain/core/tools';
+import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import type {
   OAuthTokens,
@@ -7,6 +7,7 @@ import type {
   OAuthClientInformation,
   OAuthClientInformationFull,
 } from '@modelcontextprotocol/sdk/shared/auth.js';
+
 import type { McpServerConfig } from './types.js';
 
 /**

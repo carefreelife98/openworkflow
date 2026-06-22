@@ -1,4 +1,3 @@
-import { useMemo, useCallback } from 'react';
 import {
   ReactFlow,
   Background,
@@ -11,10 +10,8 @@ import {
   type EdgeTypes,
   type Node as RfNode,
 } from '@xyflow/react';
-import type { BuilderStore } from '../store/builder-store.js';
-import type { NodeRunStatus, BuilderStrings } from '../types.js';
-import { DEFAULT_STRINGS } from '../types.js';
-import { buildDisplayNodes, buildDisplayEdges, stripMarkers } from '../lib/serializer.js';
+import { useMemo, useCallback } from 'react';
+
 import {
   isMarkerEdge,
   isStartMarkerEdge,
@@ -22,9 +19,14 @@ import {
   START_MARKER_ID,
   END_MARKER_ID,
 } from '../lib/markers.js';
-import { PipelineNodeCard, type PipelineNodeData } from './PipelineNodeCard.js';
+import { buildDisplayNodes, buildDisplayEdges, stripMarkers } from '../lib/serializer.js';
+import type { BuilderStore } from '../store/builder-store.js';
+import type { NodeRunStatus, BuilderStrings } from '../types.js';
+import { DEFAULT_STRINGS } from '../types.js';
+
 import { DeletableEdge } from './DeletableEdge.js';
 import { StartMarker, EndMarker } from './markers.js';
+import { PipelineNodeCard, type PipelineNodeData } from './PipelineNodeCard.js';
 
 const DEFAULT_NODE_TYPES: NodeTypes = {
   pipelineNode: PipelineNodeCard,
@@ -106,7 +108,7 @@ export function BuilderCanvas(props: BuilderCanvasProps): React.JSX.Element {
     (edgeId: string) => {
       if (isMarkerEdge(edgeId)) {
         const { startTargets: st, endSources: es } = stripMarkers([
-          { id: edgeId, source: '', target: '' } as never,
+          { id: edgeId, source: '', target: '' },
         ]);
         void st;
         void es;

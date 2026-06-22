@@ -8,10 +8,10 @@
  * The IF condition reads the custom node's output via a `state` binding. Both
  * branches point at a real node (an IF requires a true AND a false target).
  */
-import { PipelineEngine } from '@openpipeline/runtime';
-import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openpipeline/nodes';
-import { MemoryStore } from '@openpipeline/store-memory';
 import { defineNode } from '@openpipeline/core';
+import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openpipeline/nodes';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { MemoryStore } from '@openpipeline/store-memory';
 import { z } from 'zod';
 
 // A trivial LlmFactory stub so llm.invoke works without API keys.

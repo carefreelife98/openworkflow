@@ -6,8 +6,9 @@ import {
   type PipelineWithGraph,
   type CompiledNode,
 } from '@openpipeline/core';
-import { NodeSpecRegistry, type NodeResolveContext } from './registry.js';
+
 import { makeNodeRunner, type NodeRunnerDeps } from './node-runner.js';
+import { NodeSpecRegistry, type NodeResolveContext } from './registry.js';
 
 /** Deps the caller supplies; `nodeMap` is filled internally by the compiler. */
 export type CompilerDeps = Omit<NodeRunnerDeps, 'nodeMap'> & {
@@ -191,7 +192,7 @@ export class PipelineCompiler {
       app: app as unknown as CompiledPipeline['app'],
       entryNodeIds,
       exitNodeIds,
-      nodeMap: nodeMap as ReadonlyMap<string, CompiledNode>,
+      nodeMap: nodeMap,
     };
 
     if (!hasMcpNode) {
