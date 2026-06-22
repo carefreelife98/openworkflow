@@ -22,7 +22,7 @@ export interface PipelineNodeData {
  * Consumers can supply their own node component via `nodeTypes` if they want a
  * different look.
  */
-export function PipelineNodeCard(props: NodeProps): JSX.Element {
+export function PipelineNodeCard(props: NodeProps): React.JSX.Element {
   const data = props.data as PipelineNodeData;
   const node = data.node;
   const isIf = node.nodeType === 'IF';

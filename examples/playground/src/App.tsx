@@ -13,7 +13,7 @@ import type { PipelineDraft } from '@openpipeline/core';
  *   - the palette: add nodes from the catalog
  * @openpipeline/react contributes only the canvas + store.
  */
-export function App(): JSX.Element {
+export function App(): React.JSX.Element {
   const store = useMemo(() => createBuilderStore(), []);
   const [catalog, setCatalog] = useState<NodeSpecDescriptor[]>([]);
   const [pipelineId, setPipelineId] = useState<string | null>(null);
