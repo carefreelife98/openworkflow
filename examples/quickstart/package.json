@@ -12,6 +12,6 @@
     "@openpipeline/nodes": "workspace:*",
     "@openpipeline/runtime": "workspace:*",
     "@openpipeline/store-memory": "workspace:*",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   }
 }

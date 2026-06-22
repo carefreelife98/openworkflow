@@ -72,7 +72,7 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
       zustand:
         specifier: ^5.0.2
@@ -112,7 +112,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/store-prisma
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
 
   examples/quickstart:
@@ -130,7 +130,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/store-memory
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
 
   examples/server:
@@ -151,7 +151,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/store-memory
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
 
   packages/core:
@@ -240,7 +240,7 @@ importers:
         specifier: workspace:*
         version: link:../store-memory
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.4.3
         version: 4.4.3
 
   packages/server:
