@@ -64,7 +64,7 @@ export interface BuilderCanvasProps {
  *
  * Wrap usage in `<ReactFlowProvider>` and import `@xyflow/react/dist/style.css`.
  */
-export function BuilderCanvas(props: BuilderCanvasProps): JSX.Element {
+export function BuilderCanvas(props: BuilderCanvasProps): React.JSX.Element {
   const useStore = props.store;
   const strings = { ...DEFAULT_STRINGS, ...props.strings };
   const editable = props.editable ?? true;
