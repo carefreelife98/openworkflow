@@ -100,29 +100,6 @@ export function BuilderCanvas(props: BuilderCanvasProps): JSX.Element {
     );
   }, [nodes, startMarker, endMarker, strings.startLabel, strings.endLabel, props.nodeRunStatus]);
 
-  const displayEdges = useMemo(() => {
-    const built = buildDisplayEdges(edges, startTargets, endSources);
-    return built.map((e) => ({ ...e, data: { ...e.data, onDelete: editable ? handleDeleteEdge : undefined } }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, startTargets, endSources, editable]);
-
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      for (const change of changes) {
-        if (change.type === 'position' && change.position && !change.dragging) {
-          if (change.id === START_MARKER_ID) updateMarkerPosition('start', change.position.x, change.position.y);
-          else if (change.id === END_MARKER_ID) updateMarkerPosition('end', change.position.x, change.position.y);
-          else updateNodePosition(change.id, change.position.x, change.position.y);
-        } else if (change.type === 'remove') {
-          if (change.id !== START_MARKER_ID && change.id !== END_MARKER_ID) removeNode(change.id);
-        } else if (change.type === 'select') {
-          selectNode(change.selected ? change.id : null);
-        }
-      }
-    },
-    [updateNodePosition, updateMarkerPosition, removeNode, selectNode],
-  );
-
   const handleDeleteEdge = useCallback(
     (edgeId: string) => {
       if (isMarkerEdge(edgeId)) {
@@ -140,6 +117,28 @@ export function BuilderCanvas(props: BuilderCanvasProps): JSX.Element {
       }
     },
     [removeEdge, removeStartTarget, removeEndSource],
+  );
+
+  const displayEdges = useMemo(() => {
+    const built = buildDisplayEdges(edges, startTargets, endSources);
+    return built.map((e) => ({ ...e, data: { ...e.data, onDelete: editable ? handleDeleteEdge : undefined } }));
+  }, [edges, startTargets, endSources, editable, handleDeleteEdge]);
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      for (const change of changes) {
+        if (change.type === 'position' && change.position && !change.dragging) {
+          if (change.id === START_MARKER_ID) updateMarkerPosition('start', change.position.x, change.position.y);
+          else if (change.id === END_MARKER_ID) updateMarkerPosition('end', change.position.x, change.position.y);
+          else updateNodePosition(change.id, change.position.x, change.position.y);
+        } else if (change.type === 'remove') {
+          if (change.id !== START_MARKER_ID && change.id !== END_MARKER_ID) removeNode(change.id);
+        } else if (change.type === 'select') {
+          selectNode(change.selected ? change.id : null);
+        }
+      }
+    },
+    [updateNodePosition, updateMarkerPosition, removeNode, selectNode],
   );
 
   const handleEdgesChange = useCallback(
