@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   NOOP_LOGGER,
-  WorkflowNodeExecutionError,
+  PipelineNodeExecutionError,
   type McpNodeResolver,
   type NodeSpec,
   type NodeExecutionContext,
@@ -10,7 +10,7 @@ import {
   type ResolvedTool,
   type McpNodeSpecMeta,
   type Logger,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 import { McpSchemaConverter } from './schema-converter.js';
 
 export interface ParsedMcpKey {
@@ -58,7 +58,7 @@ export class McpNodeResolverImpl implements McpNodeResolver {
 
     const provider = providers.find((p) => p.key === providerKey);
     if (!provider) {
-      throw new WorkflowNodeExecutionError(key, {
+      throw new PipelineNodeExecutionError(key, {
         kind: 'NODE_EXECUTION',
         code: 'NODE_MCP_PROVIDER_UNAVAILABLE',
         message: `MCP provider not available: ${providerKey}. It may be disabled or disconnected.`,
@@ -67,7 +67,7 @@ export class McpNodeResolverImpl implements McpNodeResolver {
 
     const tool = provider.tools.find((t) => t.name === toolName);
     if (!tool) {
-      throw new WorkflowNodeExecutionError(key, {
+      throw new PipelineNodeExecutionError(key, {
         kind: 'NODE_EXECUTION',
         code: 'NODE_MCP_TOOL_NOT_EXPOSED',
         message: `MCP tool not exposed: ${providerKey}/${toolName}.`,
@@ -76,7 +76,7 @@ export class McpNodeResolverImpl implements McpNodeResolver {
 
     const inputResult = this.converter.convert(tool.inputSchema ?? { type: 'object' }, { providerKey, toolName });
     if (!inputResult.success) {
-      throw new WorkflowNodeExecutionError(key, {
+      throw new PipelineNodeExecutionError(key, {
         kind: 'NODE_EXECUTION',
         code: 'NODE_MCP_SCHEMA_INCOMPATIBLE',
         message: `MCP tool input schema could not be converted: ${providerKey}/${toolName} (${inputResult.reason.kind}).`,

@@ -1,11 +1,11 @@
 import { StateGraph, START, END } from '@langchain/langgraph';
 import {
-  WorkflowStateAnnotation,
+  PipelineStateAnnotation,
   analyzeTopology,
-  WorkflowCompileError,
-  type WorkflowWithGraph,
+  PipelineCompileError,
+  type PipelineWithGraph,
   type CompiledNode,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 import { NodeSpecRegistry, type NodeResolveContext } from './registry.js';
 import { makeNodeRunner, type NodeRunnerDeps } from './node-runner.js';
 
@@ -13,13 +13,13 @@ import { makeNodeRunner, type NodeRunnerDeps } from './node-runner.js';
 export type CompilerDeps = Omit<NodeRunnerDeps, 'nodeMap'> & {
   registry: NodeSpecRegistry;
   /** Optional graph validator. Throw or return errors to reject compilation. */
-  validate?: (graph: WorkflowWithGraph, ctx: NodeResolveContext) => Promise<void> | void;
+  validate?: (graph: PipelineWithGraph, ctx: NodeResolveContext) => Promise<void> | void;
   resolveContext?: NodeResolveContext;
 };
 
-export interface CompiledWorkflow {
-  workflowId: string;
-  workflowName: string;
+export interface CompiledPipeline {
+  pipelineId: string;
+  pipelineName: string;
   // LangGraph's compiled app; typed loosely to keep its generics off the surface.
   app: {
     invoke: (input: unknown, config?: unknown) => Promise<unknown>;
@@ -32,15 +32,15 @@ export interface CompiledWorkflow {
 
 interface CacheEntry {
   cacheKey: string;
-  compiled: CompiledWorkflow;
+  compiled: CompiledPipeline;
 }
 
 /**
- * Compiles a workflow graph into a runnable LangGraph StateGraph. De-@Injectable
+ * Compiles a pipeline graph into a runnable LangGraph StateGraph. De-@Injectable
  * from the Mate-X original: a plain class. Preserves the LRU cache, the fan-in
  * `defer` semantics, and the MCP-node cache-bypass policy verbatim.
  */
-export class WorkflowCompiler {
+export class PipelineCompiler {
   private readonly cache: CacheEntry[] = [];
   private readonly CAPACITY = 10;
 
@@ -55,13 +55,13 @@ export class WorkflowCompiler {
     this.resolveContext = ctx;
   }
 
-  async compile(graph: WorkflowWithGraph): Promise<CompiledWorkflow> {
+  async compile(graph: PipelineWithGraph): Promise<CompiledPipeline> {
     const ctx: NodeResolveContext = this.resolveContext;
 
     // MCP-node graphs bypass the cache: an MCP spec depends on user/provider
     // state, so a cache hit could serve a stale spec.
     const hasMcpNode = graph.nodes.some((n) => n.key.startsWith('mcp:'));
-    const cacheKey = `${graph.workflow.id}:${new Date(graph.workflow.updatedAt).getTime()}`;
+    const cacheKey = `${graph.pipeline.id}:${new Date(graph.pipeline.updatedAt).getTime()}`;
 
     if (!hasMcpNode) {
       const idx = this.cache.findIndex((e) => e.cacheKey === cacheKey);
@@ -78,9 +78,9 @@ export class WorkflowCompiler {
 
     const topo = analyzeTopology(graph.nodes, graph.edges);
     if (topo.entryNodes.length < 1 || topo.exitNodes.length < 1) {
-      throw new WorkflowCompileError(
+      throw new PipelineCompileError(
         [{ scope: 'graph', kind: 'TOPOLOGY_NO_ENTRY', message: 'Expected at least one entry and one exit node' }],
-        graph.workflow.name,
+        graph.pipeline.name,
       );
     }
 
@@ -102,7 +102,7 @@ export class WorkflowCompiler {
       });
     }
 
-    const stateGraph = new StateGraph(WorkflowStateAnnotation);
+    const stateGraph = new StateGraph(PipelineStateAnnotation);
     const runnerDeps: NodeRunnerDeps = {
       bindingResolver: this.deps.bindingResolver,
       stepRecorder: this.deps.stepRecorder,
@@ -139,7 +139,7 @@ export class WorkflowCompiler {
     for (const [ifId, branches] of Object.entries(ifBranches)) {
       if (!branches.true || !branches.false) {
         const ifNodeKey = nodeMap.get(ifId)?.node.key ?? ifId;
-        throw new WorkflowCompileError(
+        throw new PipelineCompileError(
           [
             {
               scope: 'node',
@@ -149,7 +149,7 @@ export class WorkflowCompiler {
               message: `IF node "${ifId}" is missing a true/false branch`,
             },
           ],
-          graph.workflow.name,
+          graph.pipeline.name,
         );
       }
       const trueTarget = branches.true;
@@ -172,10 +172,10 @@ export class WorkflowCompiler {
 
     const app = stateGraph.compile();
 
-    const compiled: CompiledWorkflow = {
-      workflowId: graph.workflow.id,
-      workflowName: graph.workflow.name,
-      app: app as unknown as CompiledWorkflow['app'],
+    const compiled: CompiledPipeline = {
+      pipelineId: graph.pipeline.id,
+      pipelineName: graph.pipeline.name,
+      app: app as unknown as CompiledPipeline['app'],
       entryNodeIds,
       exitNodeIds,
       nodeMap: nodeMap as ReadonlyMap<string, CompiledNode>,

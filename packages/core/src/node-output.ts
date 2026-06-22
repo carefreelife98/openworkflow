@@ -1,18 +1,18 @@
 // Node outputs. Unlike the Mate-X original (a closed discriminated union of
-// Flow-specific tool results), OpenWorkflow core keeps this open: every output
+// Flow-specific tool results), OpenPipeline core keeps this open: every output
 // is an object with a `kind` discriminator and arbitrary fields. Built-in node
 // outputs (IF, LLM, generic MCP) are named below; user-defined nodes contribute
 // their own `kind` values.
 
 /** The minimal shape every node output must satisfy. */
-export interface WorkflowNodeOutput {
+export interface PipelineNodeOutput {
   kind: string;
   [key: string]: unknown;
 }
 
 // ── Built-in node outputs ───────────────────────────────────────────────────
 
-export interface IfNodeOutput extends WorkflowNodeOutput {
+export interface IfNodeOutput extends PipelineNodeOutput {
   kind: 'control.if';
   branch: 'true' | 'false';
 }
@@ -25,7 +25,7 @@ export interface LlmTokenUsage {
   total: number;
 }
 
-export interface LlmNodeOutput extends WorkflowNodeOutput {
+export interface LlmNodeOutput extends PipelineNodeOutput {
   kind: 'llm.invoke';
   text: string;
   finishReason: LlmFinishReason;
@@ -38,7 +38,7 @@ export interface LlmNodeOutput extends WorkflowNodeOutput {
  * LLM resolver. MCP tools that DO declare an output schema are validated to
  * their exact shape instead.
  */
-export interface McpToolNodeOutput extends WorkflowNodeOutput {
+export interface McpToolNodeOutput extends PipelineNodeOutput {
   kind: 'mcp_tool';
   providerKey: string;
   toolName: string;
@@ -46,4 +46,4 @@ export interface McpToolNodeOutput extends WorkflowNodeOutput {
 }
 
 /** Outputs keyed by node id, as accumulated in the run state. */
-export type WorkflowOutputs = Record<string, WorkflowNodeOutput>;
+export type PipelineOutputs = Record<string, PipelineNodeOutput>;

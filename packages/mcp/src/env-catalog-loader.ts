@@ -5,7 +5,7 @@ import {
   type ResolvedProvider,
   type ResolvedTool,
   type Logger,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 import type { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import type { StructuredTool } from '@langchain/core/tools';
 import type { McpServerConfig } from './types.js';

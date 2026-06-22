@@ -9,7 +9,7 @@ const STATUS_COLOR: Record<NodeRunStatus, string> = {
   ABORTED: '#f59e0b',
 };
 
-export interface WorkflowNodeData {
+export interface PipelineNodeData {
   node: BuilderNode;
   /** Live run status, fed in by the consumer via node data. */
   runStatus?: NodeRunStatus;
@@ -22,8 +22,8 @@ export interface WorkflowNodeData {
  * Consumers can supply their own node component via `nodeTypes` if they want a
  * different look.
  */
-export function WorkflowNodeCard(props: NodeProps): JSX.Element {
-  const data = props.data as WorkflowNodeData;
+export function PipelineNodeCard(props: NodeProps): JSX.Element {
+  const data = props.data as PipelineNodeData;
   const node = data.node;
   const isIf = node.nodeType === 'IF';
   const statusColor = data.runStatus ? STATUS_COLOR[data.runStatus] : undefined;

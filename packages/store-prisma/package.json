@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/store-prisma",
+  "name": "@openpipeline/store-prisma",
   "version": "0.1.0",
-  "description": "Postgres WorkflowStore + StepRecorder adapter for OpenWorkflow (Prisma).",
+  "description": "Postgres PipelineStore + StepRecorder adapter for OpenPipeline (Prisma).",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/store-prisma#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "store",
     "prisma",
     "postgres"
@@ -40,7 +40,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*"
+    "@openpipeline/core": "workspace:*"
   },
   "peerDependencies": {
     "@prisma/client": ">=5"

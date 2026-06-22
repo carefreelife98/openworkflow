@@ -1,23 +1,23 @@
-# @openworkflow/runtime
+# @openpipeline/runtime
 
-WorkflowEngine orchestrator for OpenWorkflow — drives a run end to end over the kernel.
+PipelineEngine orchestrator for OpenPipeline — drives a run end to end over the kernel.
 
-Part of [OpenWorkflow](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool workflows as LangGraph DAGs.
+Part of [OpenPipeline](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool pipelines as LangGraph DAGs.
 
 ## Install
 
 ```bash
-npm i @openworkflow/runtime
+npm i @openpipeline/runtime
 ```
 
 ## Usage
 
-The `WorkflowEngine` — loads a graph, compiles it, runs it, records steps, tracks cost, and streams live events. This is the package most apps import.
+The `PipelineEngine` — loads a graph, compiles it, runs it, records steps, tracks cost, and streams live events. This is the package most apps import.
 
 ```ts
-import { WorkflowEngine } from '@openworkflow/runtime';
-const engine = new WorkflowEngine({ store, llmFactory });
-const { runId, done } = await engine.run({ workflowId });
+import { PipelineEngine } from '@openpipeline/runtime';
+const engine = new PipelineEngine({ store, llmFactory });
+const { runId, done } = await engine.run({ pipelineId });
 ```
 
 See the [root README](https://github.com/carefreelife98/openworkflow#readme) for the full quickstart and the playground.

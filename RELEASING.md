@@ -1,6 +1,6 @@
-# Releasing OpenWorkflow
+# Releasing OpenPipeline
 
-The 8 `@openworkflow/*` packages are published together, in lockstep, at the same
+The 8 `@openpipeline/*` packages are published together, in lockstep, at the same
 version (currently `0.1.x`). Internal dependencies use `workspace:*`, which **pnpm
 rewrites to the exact published version** at pack/publish time. Plain `npm publish`
 does **not** do this rewrite and would ship a literal `workspace:*`, breaking every
@@ -28,7 +28,7 @@ pnpm typecheck && pnpm build && pnpm example
 
 # 3. Dry-run pack and inspect one tarball
 pnpm -r --filter ./packages/* pack --pack-destination /tmp/owf
-tar -xzOf /tmp/owf/openworkflow-runtime-*.tgz package/package.json   # deps must be concrete (no workspace:)
+tar -xzOf /tmp/owf/openpipeline-runtime-*.tgz package/package.json   # deps must be concrete (no workspace:)
 
 # 4. Publish in dependency order
 pnpm -r --filter ./packages/* publish
@@ -37,14 +37,14 @@ pnpm -r --filter ./packages/* publish
 #    core -> nodes -> runtime -> mcp -> store-memory -> store-prisma -> react -> server
 
 # 5. Verify on the registry
-npm view @openworkflow/runtime version
-npm view @openworkflow/runtime dependencies   # should show concrete @openworkflow/* pins
+npm view @openpipeline/runtime version
+npm view @openpipeline/runtime dependencies   # should show concrete @openpipeline/* pins
 ```
 
 ## First publish
 
 Nothing is on npm yet, so the **first** publish must respect the leaf-first order
-or dependents will 404 on their `@openworkflow/*` deps. `pnpm -r publish` handles
+or dependents will 404 on their `@openpipeline/*` deps. `pnpm -r publish` handles
 ordering; if publishing by hand, follow the order above.
 
 ## Not yet adopted (deferred)

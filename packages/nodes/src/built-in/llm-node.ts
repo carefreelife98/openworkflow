@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineNode, type NodeSpec, type LlmNodeOutput } from '@openworkflow/core';
+import { defineNode, type NodeSpec, type LlmNodeOutput } from '@openpipeline/core';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { costFromLlmResponse, extractTokenUsage, resolveFinishReason, resolveText } from './llm-helpers.js';
 

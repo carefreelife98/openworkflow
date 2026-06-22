@@ -1,9 +1,9 @@
 // Engine-essential enums only. Mate-X multi-tenancy enums (scope, purpose,
-// category, trigger-source) are intentionally NOT part of OpenWorkflow core —
-// those are a host concern, implemented in a WorkflowStore adapter if needed.
+// category, trigger-source) are intentionally NOT part of OpenPipeline core —
+// those are a host concern, implemented in a PipelineStore adapter if needed.
 
 /**
- * The kind of a node in a workflow graph.
+ * The kind of a node in a pipeline graph.
  * - TOOL: a deterministic tool call (built-in or user-defined plugin)
  * - LLM: a direct language-model invocation
  * - IF: a boolean branch (exactly two outgoing edges: "true" / "false")

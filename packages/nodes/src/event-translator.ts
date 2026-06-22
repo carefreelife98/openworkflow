@@ -1,4 +1,4 @@
-import type { WorkflowEvent } from '@openworkflow/core';
+import type { PipelineEvent } from '@openpipeline/core';
 
 /** Minimal shape of a LangGraph streamEvents v2 event. */
 export interface LangGraphStreamEvent {
@@ -9,7 +9,7 @@ export interface LangGraphStreamEvent {
 }
 
 /**
- * Translate a LangGraph streamEvents v2 event into a WorkflowEvent. Faithful port
+ * Translate a LangGraph streamEvents v2 event into a PipelineEvent. Faithful port
  * of the Mate-X translator.
  *
  * `knownNodeIds` filters out nested sub-graph node events: some node handlers run
@@ -19,7 +19,7 @@ export interface LangGraphStreamEvent {
 export function translateEvent(
   event: LangGraphStreamEvent,
   knownNodeIds?: ReadonlySet<string>,
-): WorkflowEvent | null {
+): PipelineEvent | null {
   switch (event.event) {
     case 'on_chain_start': {
       const nodeId = event.metadata?.langgraph_node;

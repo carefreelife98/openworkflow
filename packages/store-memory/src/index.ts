@@ -1,25 +1,25 @@
 import {
-  type WorkflowStore,
+  type PipelineStore,
   type StepRecorder,
-  type WorkflowWithGraph,
-  type WorkflowDraft,
+  type PipelineWithGraph,
+  type PipelineDraft,
   type RunCreate,
   type RunComplete,
   type RunSummary,
   type StepStart,
   type StepFinish,
-  type WorkflowRow,
-  type WorkflowNodeRow,
-  type WorkflowEdgeRow,
+  type PipelineRow,
+  type PipelineNodeRow,
+  type PipelineEdgeRow,
   type CostBundle,
   type RunStatus,
   type RunStepStatus,
   mergeCost,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 
 interface StoredRun {
   id: string;
-  workflowId: string;
+  pipelineId: string;
   userId?: string;
   status: RunStatus;
   cost: CostBundle;
@@ -51,18 +51,18 @@ function genId(prefix: string): string {
 }
 
 /**
- * In-memory reference implementation of WorkflowStore + StepRecorder. Makes
- * "install + run a workflow" work with zero database. Proves the persistence
+ * In-memory reference implementation of PipelineStore + StepRecorder. Makes
+ * "install + run a pipeline" work with zero database. Proves the persistence
  * interfaces are real.
  *
  * Step sequencing is guarded by a promise-chain mutex: LangGraph fan-in can call
  * `start()` concurrently, and `sequenceIndex` must be assigned atomically or
  * parallel branches collide on sequence numbers.
  */
-export class MemoryStore implements WorkflowStore, StepRecorder {
-  private readonly workflows = new Map<string, WorkflowRow>();
-  private readonly nodes = new Map<string, WorkflowNodeRow[]>();
-  private readonly edges = new Map<string, WorkflowEdgeRow[]>();
+export class MemoryStore implements PipelineStore, StepRecorder {
+  private readonly pipelines = new Map<string, PipelineRow>();
+  private readonly nodes = new Map<string, PipelineNodeRow[]>();
+  private readonly edges = new Map<string, PipelineEdgeRow[]>();
   private readonly runs = new Map<string, StoredRun>();
   private readonly steps = new Map<string, StoredStep>();
 
@@ -70,23 +70,23 @@ export class MemoryStore implements WorkflowStore, StepRecorder {
   private seqLock: Promise<unknown> = Promise.resolve();
   private readonly seqByRun = new Map<string, number>();
 
-  // ── WorkflowStore ─────────────────────────────────────────────────────────
+  // ── PipelineStore ─────────────────────────────────────────────────────────
 
-  async load(workflowId: string): Promise<WorkflowWithGraph> {
-    const workflow = this.workflows.get(workflowId);
-    if (!workflow) throw new Error(`Workflow not found: ${workflowId}`);
+  async load(pipelineId: string): Promise<PipelineWithGraph> {
+    const pipeline = this.pipelines.get(pipelineId);
+    if (!pipeline) throw new Error(`Pipeline not found: ${pipelineId}`);
     return {
-      workflow,
-      nodes: this.nodes.get(workflowId) ?? [],
-      edges: this.edges.get(workflowId) ?? [],
+      pipeline,
+      nodes: this.nodes.get(pipelineId) ?? [],
+      edges: this.edges.get(pipelineId) ?? [],
     };
   }
 
-  async save(draft: WorkflowDraft): Promise<string> {
+  async save(draft: PipelineDraft): Promise<string> {
     const now = new Date();
     const id = draft.id ?? genId('wf');
-    const existing = this.workflows.get(id);
-    const workflow: WorkflowRow = {
+    const existing = this.pipelines.get(id);
+    const pipeline: PipelineRow = {
       id,
       name: draft.name,
       description: draft.description,
@@ -94,14 +94,14 @@ export class MemoryStore implements WorkflowStore, StepRecorder {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
-    this.workflows.set(id, workflow);
+    this.pipelines.set(id, pipeline);
     this.nodes.set(
       id,
-      draft.nodes.map((n) => ({ ...n, workflowId: id })),
+      draft.nodes.map((n) => ({ ...n, pipelineId: id })),
     );
     this.edges.set(
       id,
-      draft.edges.map((e) => ({ ...e, workflowId: id })),
+      draft.edges.map((e) => ({ ...e, pipelineId: id })),
     );
     return id;
   }
@@ -111,7 +111,7 @@ export class MemoryStore implements WorkflowStore, StepRecorder {
     const startedAt = new Date();
     this.runs.set(runId, {
       id: runId,
-      workflowId: run.workflowId,
+      pipelineId: run.pipelineId,
       userId: run.userId,
       status: 'RUNNING',
       cost: { tokens: { input: 0, output: 0, total: 0 }, dollars: 0, llmCalls: 0 },
@@ -137,14 +137,14 @@ export class MemoryStore implements WorkflowStore, StepRecorder {
     run.cost = mergeCost(run.cost, delta);
   }
 
-  async listRuns(workflowId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
+  async listRuns(pipelineId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
     const all = Array.from(this.runs.values())
-      .filter((r) => r.workflowId === workflowId)
+      .filter((r) => r.pipelineId === pipelineId)
       .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
     const limited = opts?.limit ? all.slice(0, opts.limit) : all;
     return limited.map((r) => ({
       id: r.id,
-      workflowId: r.workflowId,
+      pipelineId: r.pipelineId,
       status: r.status,
       startedAt: r.startedAt,
       finishedAt: r.finishedAt,

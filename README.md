@@ -1,9 +1,9 @@
-# OpenWorkflow
+# OpenPipeline
 
-A framework-agnostic engine for compiling and running **MCP-tool workflows** as
+A framework-agnostic engine for compiling and running **MCP-tool pipelines** as
 [LangGraph](https://github.com/langchain-ai/langgraphjs) DAGs.
 
-Draw a graph of nodes — tools, LLM calls, conditional branches — and OpenWorkflow
+Draw a graph of nodes — tools, LLM calls, conditional branches — and OpenPipeline
 compiles it to a LangGraph `StateGraph` and executes it, with typed inputs/outputs
 (Zod), state-path bindings between nodes, cost tracking, and abort support.
 
@@ -19,7 +19,7 @@ everything else is an interface you can swap.
 ## Install
 
 ```bash
-npm i @openworkflow/runtime @openworkflow/nodes @openworkflow/store-memory zod
+npm i @openpipeline/runtime @openpipeline/nodes @openpipeline/store-memory zod
 ```
 
 ## Quickstart
@@ -27,13 +27,13 @@ npm i @openworkflow/runtime @openworkflow/nodes @openworkflow/store-memory zod
 Run a 3-node DAG with zero database and zero API keys:
 
 ```ts
-import { WorkflowEngine } from '@openworkflow/runtime';
-import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openworkflow/nodes';
-import { MemoryStore } from '@openworkflow/store-memory';
-import { defineNode } from '@openworkflow/core';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openpipeline/nodes';
+import { MemoryStore } from '@openpipeline/store-memory';
+import { defineNode } from '@openpipeline/core';
 import { z } from 'zod';
 
-const engine = new WorkflowEngine({
+const engine = new PipelineEngine({
   store: new MemoryStore(),
   llmFactory: { createModel: (id) => myLangchainModel(id) }, // your provider
 });
@@ -54,7 +54,7 @@ engine.registerNode(
 );
 
 const id = await engine.save({ name: 'demo', nodes: [/* ... */], edges: [/* ... */] });
-const { runId, done } = await engine.run({ workflowId: id });
+const { runId, done } = await engine.run({ pipelineId: id });
 const result = await done; // { status: 'SUCCESS', outputs, cost }
 ```
 
@@ -74,7 +74,7 @@ pnpm install && pnpm build && pnpm example
   - `literal` — a constant
   - `state` — a reference into the run state, e.g. `outputs.<nodeId>.field`
   - `auto` — filled by an LLM at runtime (requires an `AutoParamResolver`)
-- **The engine** — `WorkflowEngine` loads a graph, compiles it (DAG → LangGraph
+- **The engine** — `PipelineEngine` loads a graph, compiles it (DAG → LangGraph
   `StateGraph`, with fan-in `defer` semantics and an LRU cache), runs it, records
   per-node steps, and tracks cost. Conditional `IF` nodes route to a `true`/`false`
   branch.
@@ -83,20 +83,20 @@ pnpm install && pnpm build && pnpm example
 
 | Package | Responsibility |
 | --- | --- |
-| [`@openworkflow/core`](./packages/core) | Types + interface contracts (`WorkflowStore`, `StepRecorder`, `LlmFactory`, `CatalogLoader`, `Logger`). Zero framework deps. |
-| [`@openworkflow/nodes`](./packages/nodes) | Execution kernel (compiler, node-runner, registry, binding resolver) + built-in `IF` / `LLM` nodes. |
-| [`@openworkflow/runtime`](./packages/runtime) | `WorkflowEngine` — orchestrates a run end to end over the kernel. |
-| [`@openworkflow/store-memory`](./packages/store-memory) | In-memory `WorkflowStore` + `StepRecorder` reference implementation. |
-| [`@openworkflow/mcp`](./packages/mcp) | Optional MCP integration: JSON-Schema→Zod converter, client factory, env catalog loader, `mcp:*` node resolver, and the `CatalogPolicy` hook. |
-| [`@openworkflow/store-prisma`](./packages/store-prisma) | Postgres `WorkflowStore` + `StepRecorder` adapter (Prisma). Ships a clean 5-model schema with no multi-tenancy. |
-| [`@openworkflow/server`](./packages/server) | Transport-agnostic HTTP + SSE handlers, plus a tiny Node `http` adapter. Streams live run events. |
-| [`@openworkflow/react`](./packages/react) | The visual DAG builder as a controlled React component library (`<BuilderCanvas/>` + a Zustand store). No Next.js, no auth — you own data loading and persistence. |
+| [`@openpipeline/core`](./packages/core) | Types + interface contracts (`PipelineStore`, `StepRecorder`, `LlmFactory`, `CatalogLoader`, `Logger`). Zero framework deps. |
+| [`@openpipeline/nodes`](./packages/nodes) | Execution kernel (compiler, node-runner, registry, binding resolver) + built-in `IF` / `LLM` nodes. |
+| [`@openpipeline/runtime`](./packages/runtime) | `PipelineEngine` — orchestrates a run end to end over the kernel. |
+| [`@openpipeline/store-memory`](./packages/store-memory) | In-memory `PipelineStore` + `StepRecorder` reference implementation. |
+| [`@openpipeline/mcp`](./packages/mcp) | Optional MCP integration: JSON-Schema→Zod converter, client factory, env catalog loader, `mcp:*` node resolver, and the `CatalogPolicy` hook. |
+| [`@openpipeline/store-prisma`](./packages/store-prisma) | Postgres `PipelineStore` + `StepRecorder` adapter (Prisma). Ships a clean 5-model schema with no multi-tenancy. |
+| [`@openpipeline/server`](./packages/server) | Transport-agnostic HTTP + SSE handlers, plus a tiny Node `http` adapter. Streams live run events. |
+| [`@openpipeline/react`](./packages/react) | The visual DAG builder as a controlled React component library (`<BuilderCanvas/>` + a Zustand store). No Next.js, no auth — you own data loading and persistence. |
 
 ## Bring your own
 
 - **LLM provider** — implement `LlmFactory.createModel(modelId)` returning a
-  LangChain `BaseChatModel`. OpenWorkflow never hardcodes a provider or model list.
-- **Persistence** — implement `WorkflowStore` + `StepRecorder`. `MemoryStore` is the
+  LangChain `BaseChatModel`. OpenPipeline never hardcodes a provider or model list.
+- **Persistence** — implement `PipelineStore` + `StepRecorder`. `MemoryStore` is the
   reference; a Prisma/Postgres adapter is on the roadmap. There is **no
   multi-tenancy in core** — `companyId` / `scope` / permissions live in your adapter.
 - **MCP tools** — provide a `CatalogLoader` (single-tenant default reads servers from
@@ -105,7 +105,7 @@ pnpm install && pnpm build && pnpm example
 
 ## Design
 
-OpenWorkflow is a clean-room extraction of a production workflow engine. The
+OpenPipeline is a clean-room extraction of a production pipeline engine. The
 guiding rule: **the kernel depends on interfaces, not frameworks.** No NestJS, no
 Prisma, no proprietary libraries in the core packages — verified by the dependency
 tree (only `@langchain/*` + `zod`).
@@ -113,9 +113,9 @@ tree (only `@langchain/*` + `zod`).
 ### MCP tools
 
 ```ts
-import { createEnvCatalogLoader, McpNodeResolverImpl } from '@openworkflow/mcp';
+import { createEnvCatalogLoader, McpNodeResolverImpl } from '@openpipeline/mcp';
 
-const engine = new WorkflowEngine({
+const engine = new PipelineEngine({
   store, llmFactory,
   catalogLoader: createEnvCatalogLoader({
     servers: [
@@ -141,16 +141,16 @@ never sees `companyId` or `scope`.
 ### Postgres persistence
 
 ```ts
-import { PrismaWorkflowStore } from '@openworkflow/store-prisma';
-// PrismaClient generated from @openworkflow/store-prisma/schema.prisma
+import { PrismaPipelineStore } from '@openpipeline/store-prisma';
+// PrismaClient generated from @openpipeline/store-prisma/schema.prisma
 import { PrismaClient } from './generated/prisma';
 
-const store = new PrismaWorkflowStore(new PrismaClient());
-const engine = new WorkflowEngine({ store, llmFactory });
+const store = new PrismaPipelineStore(new PrismaClient());
+const engine = new PipelineEngine({ store, llmFactory });
 ```
 
 Apply the schema with `prisma migrate` using the shipped
-`@openworkflow/store-prisma/schema.prisma` (set `OPENWORKFLOW_DATABASE_URL`). The
+`@openpipeline/store-prisma/schema.prisma` (set `OPENPIPELINE_DATABASE_URL`). The
 schema has **no multi-tenancy** — `userId` is an optional opaque audit string with
 no foreign key. It preserves the production-grade bits: race-free atomic cost
 updates (JSONB) and fan-in-safe step sequencing.
@@ -159,15 +159,15 @@ updates (JSONB) and fan-in-safe step sequencing.
 
 ```ts
 import { createServer } from 'node:http';
-import { createWorkflowHandlers, createNodeHttpHandler } from '@openworkflow/server';
+import { createPipelineHandlers, createNodeHttpHandler } from '@openpipeline/server';
 
-const handlers = createWorkflowHandlers(engine);
+const handlers = createPipelineHandlers(engine);
 createServer(createNodeHttpHandler(handlers)).listen(3000);
-// POST /workflow, GET /workflow/:id, GET /workflow/:id/runs,
-// POST /workflow/run, GET /workflow/runs/:runId/stream?workflowId=... (SSE)
+// POST /pipeline, GET /pipeline/:id, GET /pipeline/:id/runs,
+// POST /pipeline/run, GET /pipeline/runs/:runId/stream?pipelineId=... (SSE)
 ```
 
-`WorkflowHandlers` are plain async functions with no framework dependency — mount
+`PipelineHandlers` are plain async functions with no framework dependency — mount
 them into Express/Fastify/Hono, or use the bundled Node `http` adapter. Live run
 events (`NODE_START` / `NODE_END` / `RUN_COMPLETE`, with node output + timing) are
 streamed via SSE — the engine drives them from LangGraph `streamEvents`, and you
@@ -178,10 +178,10 @@ can also subscribe directly with `engine.onEvent(runId, listener)`.
 ```tsx
 import '@xyflow/react/dist/style.css';
 import { ReactFlowProvider } from '@xyflow/react';
-import { BuilderCanvas, createBuilderStore } from '@openworkflow/react';
+import { BuilderCanvas, createBuilderStore } from '@openpipeline/react';
 
 const store = createBuilderStore();
-store.getState().loadDraft(myWorkflowDraft); // from your GET endpoint
+store.getState().loadDraft(myPipelineDraft); // from your GET endpoint
 
 <ReactFlowProvider>
   <BuilderCanvas store={store} nodeRunStatus={liveStatus} />
@@ -199,13 +199,13 @@ or auth — those were the Mate-X-locked parts.
 ### Try it: the playground
 
 [`examples/playground`](./examples/playground) is a full Vite app wiring
-`@openworkflow/react` to `@openworkflow/server` — one `pnpm dev` boots a working
-builder with a node palette, a seeded workflow, save, and a Run button that streams
+`@openpipeline/react` to `@openpipeline/server` — one `pnpm dev` boots a working
+builder with a node palette, a seeded pipeline, save, and a Run button that streams
 live node status onto the canvas:
 
 ```bash
 pnpm install && pnpm build
-pnpm --filter @openworkflow/example-playground dev   # http://localhost:5173
+pnpm --filter @openpipeline/example-playground dev   # http://localhost:5173
 ```
 
 The playground also serves as the reference auth/router wrapper to copy: it owns

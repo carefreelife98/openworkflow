@@ -2,26 +2,26 @@ import { z } from 'zod';
 import {
   computeAncestors,
   computeRemainingSchema,
-  toWorkflowError,
+  toPipelineError,
   createCostAccumulator,
-  WorkflowAbortedError,
-  WorkflowNodeExecutionError,
+  PipelineAbortedError,
+  PipelineNodeExecutionError,
   NOOP_LOGGER,
   type NodeMeta,
   type NodeSpec,
-  type WorkflowStateType,
+  type PipelineStateType,
   type NodeInputs,
-  type WorkflowNodeOutput,
+  type PipelineNodeOutput,
   type NodeExecutionContext,
   type NodeEvent,
   type CostBundle,
   type CostAccumulator,
-  type WorkflowNodeRow,
+  type PipelineNodeRow,
   type CompiledNode,
   type LlmFactory,
   type StepRecorder,
   type Logger,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 import type { ValueBindingResolver } from './value-binding-resolver.js';
 import type { AutoParamResolver } from './auto-param-resolver.js';
 
@@ -45,14 +45,14 @@ interface NodeRunnerConfig {
 }
 
 export type NodeRunnerFn = (
-  state: WorkflowStateType,
+  state: PipelineStateType,
   config?: NodeRunnerConfig,
-) => Promise<Partial<WorkflowStateType>>;
+) => Promise<Partial<PipelineStateType>>;
 
-export function makeNodeRunner(node: WorkflowNodeRow, spec: NodeSpec, deps: NodeRunnerDeps): NodeRunnerFn {
+export function makeNodeRunner(node: PipelineNodeRow, spec: NodeSpec, deps: NodeRunnerDeps): NodeRunnerFn {
   const logger = deps.logger ?? NOOP_LOGGER;
 
-  return async (state: WorkflowStateType, config?: NodeRunnerConfig): Promise<Partial<WorkflowStateType>> => {
+  return async (state: PipelineStateType, config?: NodeRunnerConfig): Promise<Partial<PipelineStateType>> => {
     const signal = config?.configurable?.signal;
 
     const stepId = await deps.stepRecorder.start({
@@ -104,8 +104,8 @@ export function makeNodeRunner(node: WorkflowNodeRow, spec: NodeSpec, deps: Node
           explicitContext: explicit,
           predecessorOutputs: extractPredecessorOutputs(state, node.id, deps.nodeMap),
           parentStepId: stepId,
-          workflowName: state.meta.workflowName ?? '',
-          workflowDescription: state.meta.workflowDescription ?? '',
+          pipelineName: state.meta.pipelineName ?? '',
+          pipelineDescription: state.meta.pipelineDescription ?? '',
           signal,
         });
         costAcc.add(filled.cost);
@@ -120,7 +120,7 @@ export function makeNodeRunner(node: WorkflowNodeRow, spec: NodeSpec, deps: Node
       const output = await spec.handler(parsed as never, ctx);
 
       checkAbort(signal);
-      const validatedOutput = spec.outputSchema.parse(output) as WorkflowNodeOutput;
+      const validatedOutput = spec.outputSchema.parse(output) as PipelineNodeOutput;
 
       const finishedAt = new Date().toISOString();
       const totalCost = costAcc.total();
@@ -142,30 +142,30 @@ export function makeNodeRunner(node: WorkflowNodeRow, spec: NodeSpec, deps: Node
         events,
       };
     } catch (err) {
-      const workflowError = toWorkflowError(err);
+      const pipelineError = toPipelineError(err);
       logger.error(
         `[NodeRunner] node FAILED: ${node.label} (id=${node.id.slice(0, 8)}, key=${node.key}) — ` +
-          `${workflowError.kind}/${workflowError.code}: ${workflowError.message?.slice(0, 2000) ?? '(no message)'}`,
+          `${pipelineError.kind}/${pipelineError.code}: ${pipelineError.message?.slice(0, 2000) ?? '(no message)'}`,
       );
       if (stepId) {
         try {
-          await deps.stepRecorder.finish(stepId, { status: 'FAILED', error: workflowError });
+          await deps.stepRecorder.finish(stepId, { status: 'FAILED', error: pipelineError });
         } catch (finishErr) {
           logger.warn('[NodeRunner] failed to record FAILED step', { stepId, finishErr });
         }
       }
-      throw new WorkflowNodeExecutionError(node.id, workflowError);
+      throw new PipelineNodeExecutionError(node.id, pipelineError);
     }
   };
 }
 
 function checkAbort(signal?: AbortSignal): void {
-  if (signal?.aborted) throw new WorkflowAbortedError();
+  if (signal?.aborted) throw new PipelineAbortedError();
 }
 
 function buildExecutionContext(
-  node: WorkflowNodeRow,
-  state: WorkflowStateType,
+  node: PipelineNodeRow,
+  state: PipelineStateType,
   stepId: string,
   deps: NodeRunnerDeps,
   costAcc: CostAccumulator,
@@ -177,7 +177,7 @@ function buildExecutionContext(
     nodeLabel: node.label,
     stepId,
     runId: state.meta.runId,
-    workflowId: state.meta.workflowId,
+    pipelineId: state.meta.pipelineId,
     deliveryMode: state.meta.deliveryMode,
     context: state.meta.context,
     signal,
@@ -194,12 +194,12 @@ function buildExecutionContext(
 }
 
 function extractPredecessorOutputs(
-  state: WorkflowStateType,
+  state: PipelineStateType,
   selfNodeId: string,
   nodeMap: ReadonlyMap<string, CompiledNode>,
-): WorkflowStateType['outputs'] {
+): PipelineStateType['outputs'] {
   const ancestors = computeAncestors(selfNodeId, nodeMap);
-  const filtered: WorkflowStateType['outputs'] = {};
+  const filtered: PipelineStateType['outputs'] = {};
   for (const ancestorId of ancestors) {
     if (state.outputs[ancestorId] !== undefined) {
       filtered[ancestorId] = state.outputs[ancestorId];

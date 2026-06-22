@@ -1,4 +1,4 @@
-import type { CostBundle, LlmFinishReason } from '@openworkflow/core';
+import type { CostBundle, LlmFinishReason } from '@openpipeline/core';
 
 export interface ExtractedTokenUsage {
   input: number;

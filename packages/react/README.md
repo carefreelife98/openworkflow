@@ -1,13 +1,13 @@
-# @openworkflow/react
+# @openpipeline/react
 
-Visual DAG builder for OpenWorkflow as a controlled React component library (ReactFlow + Zustand).
+Visual DAG builder for OpenPipeline as a controlled React component library (ReactFlow + Zustand).
 
-Part of [OpenWorkflow](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool workflows as LangGraph DAGs.
+Part of [OpenPipeline](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool pipelines as LangGraph DAGs.
 
 ## Install
 
 ```bash
-npm i @openworkflow/react
+npm i @openpipeline/react
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ The visual DAG builder as a controlled React component library (ReactFlow + Zust
 ```tsx
 import '@xyflow/react/dist/style.css';
 import { ReactFlowProvider } from '@xyflow/react';
-import { BuilderCanvas, createBuilderStore } from '@openworkflow/react';
+import { BuilderCanvas, createBuilderStore } from '@openpipeline/react';
 const store = createBuilderStore();
 <ReactFlowProvider><BuilderCanvas store={store} /></ReactFlowProvider>;
 ```

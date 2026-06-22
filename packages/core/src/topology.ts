@@ -1,13 +1,13 @@
-import type { WorkflowNodeRow, WorkflowEdgeRow, TopologyAnalysis, CompiledNode } from './graph.js';
+import type { PipelineNodeRow, PipelineEdgeRow, TopologyAnalysis, CompiledNode } from './graph.js';
 
 /**
  * Build predecessor/successor maps and identify entry (in-degree 0) and exit
  * (out-degree 0) nodes. An isolated node (in=0 AND out=0) is both — a
- * single-node workflow is its own entry and exit.
+ * single-node pipeline is its own entry and exit.
  */
 export function analyzeTopology(
-  nodes: readonly WorkflowNodeRow[],
-  edges: readonly WorkflowEdgeRow[],
+  nodes: readonly PipelineNodeRow[],
+  edges: readonly PipelineEdgeRow[],
 ): TopologyAnalysis {
   const predecessors = new Map<string, string[]>();
   const successors = new Map<string, string[]>();

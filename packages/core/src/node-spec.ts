@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import type { NodeType, RunDeliveryMode } from './enums.js';
-import type { WorkflowNodeOutput } from './node-output.js';
+import type { PipelineNodeOutput } from './node-output.js';
 import type { CostBundle } from './cost.js';
 import type { NodeEvent, RunContext } from './state.js';
 
@@ -40,7 +40,7 @@ export interface NodeExecutionContext {
   stepId: string;
 
   runId: string;
-  workflowId: string;
+  pipelineId: string;
   deliveryMode: RunDeliveryMode;
   context?: RunContext;
 
@@ -69,7 +69,7 @@ export interface Logger {
 
 // ── NodeSpec ────────────────────────────────────────────────────────────────────
 
-export type NodeHandler<TInput, TOutput extends WorkflowNodeOutput> = (
+export type NodeHandler<TInput, TOutput extends PipelineNodeOutput> = (
   input: TInput,
   ctx: NodeExecutionContext,
 ) => Promise<TOutput>;
@@ -79,7 +79,7 @@ export type NodeHandler<TInput, TOutput extends WorkflowNodeOutput> = (
  * framework coupling. This is the public plugin API: author a node with
  * {@link defineNode} and register it with the engine.
  */
-export interface NodeSpec<TInput = unknown, TOutput extends WorkflowNodeOutput = WorkflowNodeOutput> {
+export interface NodeSpec<TInput = unknown, TOutput extends PipelineNodeOutput = PipelineNodeOutput> {
   /** Unique key. Built-ins use dotted names (`control.if`); MCP uses `mcp:<provider>:<tool>`. */
   key: string;
   nodeType: NodeType;
@@ -101,7 +101,7 @@ export interface NodeSpec<TInput = unknown, TOutput extends WorkflowNodeOutput =
  * Author a custom node. Thin identity helper that gives you full type inference
  * on `handler` from the input/output schemas.
  */
-export function defineNode<TInput, TOutput extends WorkflowNodeOutput>(
+export function defineNode<TInput, TOutput extends PipelineNodeOutput>(
   spec: NodeSpec<TInput, TOutput>,
 ): NodeSpec<TInput, TOutput> {
   return spec;

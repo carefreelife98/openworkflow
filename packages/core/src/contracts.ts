@@ -1,7 +1,7 @@
 import type { RunDeliveryMode, RunStatus, RunStepStatus } from './enums.js';
 import type { CostBundle } from './cost.js';
-import type { WorkflowError } from './state.js';
-import type { WorkflowWithGraph, WorkflowRow, WorkflowNodeRow, WorkflowEdgeRow } from './graph.js';
+import type { PipelineError } from './state.js';
+import type { PipelineWithGraph, PipelineRow, PipelineNodeRow, PipelineEdgeRow } from './graph.js';
 import type { NodeSpec, Logger } from './node-spec.js';
 
 // The inversion layer. These interfaces are what the engine depends on instead
@@ -13,7 +13,7 @@ import type { NodeSpec, Logger } from './node-spec.js';
 /**
  * Creates language-model instances on demand. The returned value is `unknown`
  * — it is whatever your LLM client uses (e.g. a LangChain `BaseChatModel`).
- * Node handlers cast it. This is the single seam through which OpenWorkflow
+ * Node handlers cast it. This is the single seam through which OpenPipeline
  * stays provider-agnostic.
  */
 export interface LlmFactory {
@@ -33,19 +33,19 @@ export const NOOP_LOGGER: Logger = {
   debug: () => {},
 };
 
-// ── Persistence: WorkflowStore ────────────────────────────────────────────────
+// ── Persistence: PipelineStore ────────────────────────────────────────────────
 
-export interface WorkflowDraft {
+export interface PipelineDraft {
   id?: string;
   name: string;
   description?: string;
   outputJsonSchema?: unknown;
-  nodes: ReadonlyArray<Omit<WorkflowNodeRow, 'workflowId'>>;
-  edges: ReadonlyArray<Omit<WorkflowEdgeRow, 'workflowId'>>;
+  nodes: ReadonlyArray<Omit<PipelineNodeRow, 'pipelineId'>>;
+  edges: ReadonlyArray<Omit<PipelineEdgeRow, 'pipelineId'>>;
 }
 
 export interface RunCreate {
-  workflowId: string;
+  pipelineId: string;
   userId?: string;
   deliveryMode: RunDeliveryMode;
   triggerSource?: string;
@@ -55,14 +55,14 @@ export interface RunCreate {
 export interface RunComplete {
   status: RunStatus;
   output?: unknown;
-  error?: WorkflowError;
+  error?: PipelineError;
   cost?: CostBundle;
   lastState?: unknown;
 }
 
 export interface RunSummary {
   id: string;
-  workflowId: string;
+  pipelineId: string;
   status: RunStatus;
   startedAt: Date;
   finishedAt?: Date;
@@ -70,14 +70,14 @@ export interface RunSummary {
 }
 
 /**
- * Persistence for workflows and runs. The Mate-X repositories (with their
+ * Persistence for pipelines and runs. The Mate-X repositories (with their
  * multi-tenant permission logic) collapse into this single interface; the
  * engine never sees `companyId` / `scope`. A host that needs tenancy wraps
  * these calls in its own adapter.
  */
-export interface WorkflowStore {
-  load(workflowId: string): Promise<WorkflowWithGraph>;
-  save(draft: WorkflowDraft): Promise<string>;
+export interface PipelineStore {
+  load(pipelineId: string): Promise<PipelineWithGraph>;
+  save(draft: PipelineDraft): Promise<string>;
   createRun(run: RunCreate): Promise<{ runId: string; startedAt: Date }>;
   completeRun(runId: string, result: RunComplete): Promise<void>;
   /**
@@ -85,7 +85,7 @@ export interface WorkflowStore {
    * can implement it however they like (the Prisma adapter uses a jsonb update).
    */
   updateRunCostAtomic(runId: string, delta: CostBundle): Promise<void>;
-  listRuns(workflowId: string, opts?: { limit?: number }): Promise<RunSummary[]>;
+  listRuns(pipelineId: string, opts?: { limit?: number }): Promise<RunSummary[]>;
 }
 
 // ── Persistence: StepRecorder ─────────────────────────────────────────────────
@@ -100,12 +100,12 @@ export interface StepFinish {
   status: RunStepStatus;
   input?: unknown;
   output?: unknown;
-  error?: WorkflowError;
+  error?: PipelineError;
   cost?: CostBundle;
 }
 
 /**
- * Records per-node execution steps. Kept distinct from WorkflowStore because it
+ * Records per-node execution steps. Kept distinct from PipelineStore because it
  * is on the hot path and needs its own serialization guarantee: LangGraph
  * fan-in can call `start()` concurrently, so an implementation MUST assign
  * `sequenceIndex` under a mutex (see the in-memory reference impl).

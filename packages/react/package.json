@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/react",
+  "name": "@openpipeline/react",
   "version": "0.1.0",
-  "description": "Visual DAG builder for OpenWorkflow as a controlled React component library (ReactFlow + Zustand).",
+  "description": "Visual DAG builder for OpenPipeline as a controlled React component library (ReactFlow + Zustand).",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/react#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "builder",
     "reactflow",
     "react",
@@ -38,7 +38,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*"
+    "@openpipeline/core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18",

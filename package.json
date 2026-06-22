@@ -1,8 +1,8 @@
 {
-  "name": "openworkflow",
+  "name": "openpipeline",
   "version": "0.0.0",
   "private": true,
-  "description": "A framework-agnostic engine for compiling and running MCP-tool workflows as LangGraph DAGs.",
+  "description": "A framework-agnostic engine for compiling and running MCP-tool pipelines as LangGraph DAGs.",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow#readme",
@@ -17,7 +17,7 @@
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
     "typecheck": "pnpm -r --filter \"./packages/*\" typecheck",
-    "example": "pnpm --filter @openworkflow/example-quickstart start"
+    "example": "pnpm --filter @openpipeline/example-quickstart start"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

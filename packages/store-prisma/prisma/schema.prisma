@@ -1,4 +1,4 @@
-// OpenWorkflow Postgres schema — the clean OSS data model.
+// OpenPipeline Postgres schema — the clean OSS data model.
 //
 // Deliberately omits all Mate-X multi-tenancy: no creatorId/companyId FK, no
 // scope/purpose/category, no summarizeOnEnd, no canvas markers, no User table.
@@ -15,7 +15,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("OPENWORKFLOW_DATABASE_URL")
+  url      = env("OPENPIPELINE_DATABASE_URL")
 }
 
 enum NodeType {
@@ -44,7 +44,7 @@ enum RunStepStatus {
   ABORTED
 }
 
-model Workflow {
+model Pipeline {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name             String   @db.Text
   description      String?  @db.Text
@@ -52,16 +52,16 @@ model Workflow {
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  nodes WorkflowNode[]
-  edges WorkflowEdge[]
-  runs  WorkflowRun[]
+  nodes PipelineNode[]
+  edges PipelineEdge[]
+  runs  PipelineRun[]
 
-  @@map("workflow")
+  @@map("pipeline")
 }
 
-model WorkflowNode {
+model PipelineNode {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workflowId String   @map("workflow_id") @db.Uuid
+  pipelineId String   @map("pipeline_id") @db.Uuid
   nodeType   NodeType @map("node_type")
   key        String   @db.VarChar(255)
   label      String   @db.Text
@@ -73,35 +73,35 @@ model WorkflowNode {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  workflow      Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  outgoingEdges WorkflowEdge[]    @relation("EdgeFromNode")
-  incomingEdges WorkflowEdge[]    @relation("EdgeToNode")
-  runSteps      WorkflowRunStep[]
+  pipeline      Pipeline          @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  outgoingEdges PipelineEdge[]    @relation("EdgeFromNode")
+  incomingEdges PipelineEdge[]    @relation("EdgeToNode")
+  runSteps      PipelineRunStep[]
 
-  @@index([workflowId, isDeleted])
-  @@map("workflow_node")
+  @@index([pipelineId, isDeleted])
+  @@map("pipeline_node")
 }
 
-model WorkflowEdge {
+model PipelineEdge {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workflowId String   @map("workflow_id") @db.Uuid
+  pipelineId String   @map("pipeline_id") @db.Uuid
   fromNodeId String   @map("from_node_id") @db.Uuid
   toNodeId   String   @map("to_node_id") @db.Uuid
   label      String?
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  workflow Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  fromNode WorkflowNode @relation("EdgeFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
-  toNode   WorkflowNode @relation("EdgeToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+  pipeline Pipeline     @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  fromNode PipelineNode @relation("EdgeFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode   PipelineNode @relation("EdgeToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
 
-  @@unique([workflowId, fromNodeId, toNodeId, label])
+  @@unique([pipelineId, fromNodeId, toNodeId, label])
   @@index([toNodeId])
-  @@map("workflow_edge")
+  @@map("pipeline_edge")
 }
 
-model WorkflowRun {
+model PipelineRun {
   id           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workflowId   String          @map("workflow_id") @db.Uuid
+  pipelineId   String          @map("pipeline_id") @db.Uuid
   // Opaque audit field. No FK, no tenancy semantics.
   userId       String?         @map("user_id")
   deliveryMode RunDeliveryMode @map("delivery_mode")
@@ -115,15 +115,15 @@ model WorkflowRun {
   startedAt    DateTime        @default(now()) @map("started_at") @db.Timestamptz(6)
   finishedAt   DateTime?       @map("finished_at") @db.Timestamptz(6)
 
-  workflow Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  steps    WorkflowRunStep[]
+  pipeline Pipeline          @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  steps    PipelineRunStep[]
 
-  @@index([workflowId, startedAt(sort: Desc)])
+  @@index([pipelineId, startedAt(sort: Desc)])
   @@index([status, startedAt])
-  @@map("workflow_run")
+  @@map("pipeline_run")
 }
 
-model WorkflowRunStep {
+model PipelineRunStep {
   id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   runId         String        @map("run_id") @db.Uuid
   nodeId        String        @map("node_id") @db.Uuid
@@ -138,14 +138,14 @@ model WorkflowRunStep {
   startedAt     DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
   finishedAt    DateTime?     @map("finished_at") @db.Timestamptz(6)
 
-  run      WorkflowRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
-  node     WorkflowNode      @relation(fields: [nodeId], references: [id])
-  parent   WorkflowRunStep?  @relation("StepTree", fields: [parentStepId], references: [id])
-  children WorkflowRunStep[] @relation("StepTree")
+  run      PipelineRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
+  node     PipelineNode      @relation(fields: [nodeId], references: [id])
+  parent   PipelineRunStep?  @relation("StepTree", fields: [parentStepId], references: [id])
+  children PipelineRunStep[] @relation("StepTree")
 
   @@unique([runId, sequenceIndex])
   @@index([parentStepId])
   @@index([nodeId])
   @@index([runId, status])
-  @@map("workflow_run_step")
+  @@map("pipeline_run_step")
 }

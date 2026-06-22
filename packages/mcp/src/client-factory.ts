@@ -28,7 +28,7 @@ export class PreObtainedTokenAuthProvider implements OAuthClientProvider {
   get clientMetadata(): OAuthClientMetadata {
     return {
       redirect_uris: ['http://localhost:0/callback'],
-      client_name: 'OpenWorkflow MCP Client',
+      client_name: 'OpenPipeline MCP Client',
       logo_uri: '',
       tos_uri: '',
       grant_types: ['authorization_code', 'refresh_token'],

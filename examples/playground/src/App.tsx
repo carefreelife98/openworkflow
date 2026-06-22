@@ -1,72 +1,72 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import '@xyflow/react/dist/style.css';
 import { ReactFlowProvider } from '@xyflow/react';
-import { BuilderCanvas, createBuilderStore } from '@openworkflow/react';
-import type { NodeRunStatus, NodeSpecDescriptor } from '@openworkflow/react';
-import type { WorkflowDraft } from '@openworkflow/core';
+import { BuilderCanvas, createBuilderStore } from '@openpipeline/react';
+import type { NodeRunStatus, NodeSpecDescriptor } from '@openpipeline/react';
+import type { PipelineDraft } from '@openpipeline/core';
 
 /**
  * The playground IS the reference auth/router wrapper a consumer copies. It owns:
- *   - data loading: GET the seed workflow -> store.loadDraft(...)
- *   - persistence: store.toDraft() -> POST /workflow
+ *   - data loading: GET the seed pipeline -> store.loadDraft(...)
+ *   - persistence: store.toDraft() -> POST /pipeline
  *   - running: GET the SSE stream -> nodeRunStatus overlay
  *   - the palette: add nodes from the catalog
- * @openworkflow/react contributes only the canvas + store.
+ * @openpipeline/react contributes only the canvas + store.
  */
 export function App(): JSX.Element {
   const store = useMemo(() => createBuilderStore(), []);
   const [catalog, setCatalog] = useState<NodeSpecDescriptor[]>([]);
-  const [workflowId, setWorkflowId] = useState<string | null>(null);
+  const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [nodeRunStatus, setNodeRunStatus] = useState<Record<string, NodeRunStatus>>({});
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const dirty = store((s) => s.dirty);
   const seeded = useRef(false);
 
-  // Load the catalog + seed workflow once.
+  // Load the catalog + seed pipeline once.
   useEffect(() => {
     if (seeded.current) return;
     seeded.current = true;
     void (async () => {
       const cat = (await (await fetch('/catalog')).json()) as NodeSpecDescriptor[];
       setCatalog(cat);
-      const { workflowId: id } = (await (await fetch('/seed')).json()) as { workflowId: string };
-      const graph = (await (await fetch(`/workflow/${id}`)).json()) as {
-        workflow: { id: string; name: string; description?: string };
-        nodes: WorkflowDraft['nodes'];
-        edges: WorkflowDraft['edges'];
+      const { pipelineId: id } = (await (await fetch('/seed')).json()) as { pipelineId: string };
+      const graph = (await (await fetch(`/pipeline/${id}`)).json()) as {
+        pipeline: { id: string; name: string; description?: string };
+        nodes: PipelineDraft['nodes'];
+        edges: PipelineDraft['edges'];
       };
       store.getState().loadDraft({
-        id: graph.workflow.id,
-        name: graph.workflow.name,
-        description: graph.workflow.description,
+        id: graph.pipeline.id,
+        name: graph.pipeline.name,
+        description: graph.pipeline.description,
         nodes: graph.nodes,
         edges: graph.edges,
       });
-      setWorkflowId(id);
+      setPipelineId(id);
     })();
   }, [store]);
 
   async function save() {
     const draft = store.getState().toDraft();
-    const res = await fetch('/workflow', {
+    const res = await fetch('/pipeline', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(draft),
     });
-    const { workflowId: id } = (await res.json()) as { workflowId: string };
-    setWorkflowId(id);
+    const { pipelineId: id } = (await res.json()) as { pipelineId: string };
+    setPipelineId(id);
     store.getState().markClean();
     pushLog(`saved (${id.slice(0, 8)})`);
   }
 
   async function run() {
-    if (!workflowId) return;
+    if (!pipelineId) return;
     if (dirty) await save();
     setRunning(true);
     setNodeRunStatus({});
     pushLog('run started');
-    const res = await fetch(`/workflow/runs/x/stream?workflowId=${workflowId}`);
+    const res = await fetch(`/pipeline/runs/x/stream?pipelineId=${pipelineId}`);
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let buf = '';
@@ -119,7 +119,7 @@ export function App(): JSX.Element {
     <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', height: '100%' }}>
       {/* Palette + controls */}
       <aside style={{ borderRight: '1px solid #e2e8f0', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <strong style={{ fontSize: 14 }}>OpenWorkflow</strong>
+        <strong style={{ fontSize: 14 }}>OpenPipeline</strong>
         <span style={{ fontSize: 11, color: '#64748b' }}>Playground</span>
         <hr style={{ width: '100%', border: 'none', borderTop: '1px solid #e2e8f0' }} />
         <span style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase' }}>Nodes</span>

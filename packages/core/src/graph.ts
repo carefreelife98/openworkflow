@@ -5,7 +5,7 @@ import type { NodeSpec } from './node-spec.js';
 // Plain graph interfaces replacing the Mate-X Prisma row types. No FK columns,
 // no multi-tenancy (creatorId / companyId / scope / purpose are NOT here).
 
-export interface WorkflowRow {
+export interface PipelineRow {
   id: string;
   name: string;
   description?: string;
@@ -14,9 +14,9 @@ export interface WorkflowRow {
   updatedAt: Date;
 }
 
-export interface WorkflowNodeRow {
+export interface PipelineNodeRow {
   id: string;
-  workflowId: string;
+  pipelineId: string;
   nodeType: NodeType;
   /** e.g. `tool.uppercase`, `control.if`, `mcp:notion:query_database`. */
   key: string;
@@ -27,33 +27,33 @@ export interface WorkflowNodeRow {
   positionY?: number;
 }
 
-export interface WorkflowEdgeRow {
+export interface PipelineEdgeRow {
   id: string;
-  workflowId: string;
+  pipelineId: string;
   fromNodeId: string;
   toNodeId: string;
   /** `"true"` / `"false"` for IF-node branches; otherwise undefined/null. */
   label?: string | null;
 }
 
-export interface WorkflowWithGraph {
-  workflow: WorkflowRow;
-  nodes: readonly WorkflowNodeRow[];
-  edges: readonly WorkflowEdgeRow[];
+export interface PipelineWithGraph {
+  pipeline: PipelineRow;
+  nodes: readonly PipelineNodeRow[];
+  edges: readonly PipelineEdgeRow[];
 }
 
 // ── Compiled forms ──────────────────────────────────────────────────────────────
 
 export interface CompiledNode {
-  node: WorkflowNodeRow;
+  node: PipelineNodeRow;
   spec: NodeSpec;
   predecessors: readonly string[];
   successors: readonly string[];
 }
 
 export interface TopologyAnalysis {
-  entryNodes: readonly WorkflowNodeRow[];
-  exitNodes: readonly WorkflowNodeRow[];
+  entryNodes: readonly PipelineNodeRow[];
+  exitNodes: readonly PipelineNodeRow[];
   predecessorsByNode: ReadonlyMap<string, readonly string[]>;
   successorsByNode: ReadonlyMap<string, readonly string[]>;
 }

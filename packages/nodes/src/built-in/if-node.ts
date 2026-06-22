@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineNode, type NodeSpec, type IfNodeOutput } from '@openworkflow/core';
+import { defineNode, type NodeSpec, type IfNodeOutput } from '@openpipeline/core';
 
 export const IfInputSchema = z.object({
   condition: z

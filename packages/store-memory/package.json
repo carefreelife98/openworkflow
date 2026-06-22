@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/store-memory",
+  "name": "@openpipeline/store-memory",
   "version": "0.1.0",
-  "description": "In-memory WorkflowStore + StepRecorder reference implementation for OpenWorkflow.",
+  "description": "In-memory PipelineStore + StepRecorder reference implementation for OpenPipeline.",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/store-memory#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "store",
     "in-memory"
   ],
@@ -36,7 +36,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*"
+    "@openpipeline/core": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

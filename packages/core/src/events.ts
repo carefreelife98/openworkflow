@@ -1,7 +1,7 @@
-// Live run events. The engine streams these as a workflow executes so a server
+// Live run events. The engine streams these as a pipeline executes so a server
 // (or any listener) can drive a UI. Translated from LangGraph's streamEvents.
 
-export type WorkflowEventKind =
+export type PipelineEventKind =
   | 'NODE_START'
   | 'NODE_END'
   | 'NODE_FAILED'
@@ -29,6 +29,6 @@ export interface RunCompleteEvent {
   status: 'SUCCESS' | 'FAILED' | 'ABORTED';
 }
 
-export type WorkflowEvent = NodeLifecycleEvent | LlmChunkEvent | RunCompleteEvent;
+export type PipelineEvent = NodeLifecycleEvent | LlmChunkEvent | RunCompleteEvent;
 
-export type WorkflowEventListener = (event: WorkflowEvent) => void;
+export type PipelineEventListener = (event: PipelineEvent) => void;

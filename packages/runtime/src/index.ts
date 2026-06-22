@@ -2,8 +2,8 @@ import {
   ZERO_COST,
   NOOP_LOGGER,
   RUN_DELIVERY_MODE,
-  WorkflowAbortedError,
-  type WorkflowStore,
+  PipelineAbortedError,
+  type PipelineStore,
   type StepRecorder,
   type LlmFactory,
   type CatalogLoader,
@@ -12,29 +12,29 @@ import {
   type RunContext,
   type RunDeliveryMode,
   type RunStatus,
-  type WorkflowDraft,
+  type PipelineDraft,
   type RunSummary,
-  type WorkflowStateType,
-  type WorkflowOutputs,
+  type PipelineStateType,
+  type PipelineOutputs,
   type CostBundle,
   type CatalogResult,
-  type WorkflowWithGraph,
+  type PipelineWithGraph,
   type NodeSpec,
-  type WorkflowNodeOutput,
-  type WorkflowEvent,
-  type WorkflowEventListener,
-} from '@openworkflow/core';
+  type PipelineNodeOutput,
+  type PipelineEvent,
+  type PipelineEventListener,
+} from '@openpipeline/core';
 import {
   NodeSpecRegistry,
   ValueBindingResolver,
-  WorkflowCompiler,
+  PipelineCompiler,
   translateEvent,
   type AutoParamResolver,
   type LangGraphStreamEvent,
-} from '@openworkflow/nodes';
+} from '@openpipeline/nodes';
 
-export interface WorkflowEngineOptions {
-  store: WorkflowStore & StepRecorder;
+export interface PipelineEngineOptions {
+  store: PipelineStore & StepRecorder;
   llmFactory: LlmFactory;
   logger?: Logger;
   /** Optional — required only for graphs with `auto`-bound slots. */
@@ -44,13 +44,13 @@ export interface WorkflowEngineOptions {
   /** Optional — resolves `mcp:` node keys to specs. Provide with catalogLoader. */
   mcpNodeResolver?: McpNodeResolver;
   /** Optional graph validator run before compilation. Throw to reject. */
-  validate?: (graph: WorkflowWithGraph, ctx: { userId?: string; tenantId?: string }) => Promise<void> | void;
+  validate?: (graph: PipelineWithGraph, ctx: { userId?: string; tenantId?: string }) => Promise<void> | void;
   /** Hard per-run wall-clock timeout. Default 600_000ms. */
   runTimeoutMs?: number;
 }
 
 export interface RunOptions {
-  workflowId: string;
+  pipelineId: string;
   deliveryMode?: RunDeliveryMode;
   triggerSource?: string;
   context?: RunContext;
@@ -61,7 +61,7 @@ export interface RunOptions {
 export interface RunResult {
   runId: string;
   status: RunStatus;
-  outputs: WorkflowOutputs;
+  outputs: PipelineOutputs;
   cost: CostBundle;
   error?: { kind: string; message: string };
 }
@@ -72,28 +72,28 @@ export interface RunHandle {
 }
 
 /**
- * Orchestrates a workflow run end to end over the kernel. A plain class that
+ * Orchestrates a pipeline run end to end over the kernel. A plain class that
  * takes the interface bag — no NestJS, no Prisma, no lifecycle hooks. Rewritten
- * (not extracted) from Mate-X's WorkflowRunnerService, preserving: per-run MCP
+ * (not extracted) from Mate-X's PipelineRunnerService, preserving: per-run MCP
  * catalog load + cleanup, abort propagation, and stale-step finalization.
  */
-export class WorkflowEngine {
+export class PipelineEngine {
   private readonly registry: NodeSpecRegistry;
-  private readonly compiler: WorkflowCompiler;
-  private readonly store: WorkflowStore & StepRecorder;
+  private readonly compiler: PipelineCompiler;
+  private readonly store: PipelineStore & StepRecorder;
   private readonly logger: Logger;
   private readonly runTimeoutMs: number;
   private readonly catalogLoader?: CatalogLoader;
   private readonly inFlight = new Map<string, AbortController>();
-  private readonly listeners = new Map<string, Set<WorkflowEventListener>>();
+  private readonly listeners = new Map<string, Set<PipelineEventListener>>();
 
-  constructor(private readonly options: WorkflowEngineOptions) {
+  constructor(private readonly options: PipelineEngineOptions) {
     this.store = options.store;
     this.logger = options.logger ?? NOOP_LOGGER;
     this.runTimeoutMs = options.runTimeoutMs ?? 600_000;
     this.catalogLoader = options.catalogLoader;
     this.registry = new NodeSpecRegistry(options.mcpNodeResolver);
-    this.compiler = new WorkflowCompiler({
+    this.compiler = new PipelineCompiler({
       registry: this.registry,
       bindingResolver: new ValueBindingResolver(this.logger),
       stepRecorder: this.store,
@@ -105,23 +105,23 @@ export class WorkflowEngine {
   }
 
   /** Register a node spec (built-in or custom). Chainable. */
-  registerNode<TInput, TOutput extends WorkflowNodeOutput>(spec: NodeSpec<TInput, TOutput>): this {
+  registerNode<TInput, TOutput extends PipelineNodeOutput>(spec: NodeSpec<TInput, TOutput>): this {
     this.registry.register(spec);
     return this;
   }
 
-  /** Persist a workflow draft; returns its id. */
-  save(draft: WorkflowDraft): Promise<string> {
+  /** Persist a pipeline draft; returns its id. */
+  save(draft: PipelineDraft): Promise<string> {
     return this.store.save(draft);
   }
 
-  /** Load a workflow graph (workflow + nodes + edges). */
-  load(workflowId: string): Promise<WorkflowWithGraph> {
-    return this.store.load(workflowId);
+  /** Load a pipeline graph (pipeline + nodes + edges). */
+  load(pipelineId: string): Promise<PipelineWithGraph> {
+    return this.store.load(pipelineId);
   }
 
-  listRuns(workflowId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
-    return this.store.listRuns(workflowId, opts);
+  listRuns(pipelineId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
+    return this.store.listRuns(pipelineId, opts);
   }
 
   /** Abort an in-flight run by id. No-op if the run is unknown or finished. */
@@ -134,7 +134,7 @@ export class WorkflowEngine {
    * RUN_COMPLETE). Returns an unsubscribe function. Subscribe before the run's
    * `done` resolves to catch all events; events are fire-and-forget (no replay).
    */
-  onEvent(runId: string, listener: WorkflowEventListener): () => void {
+  onEvent(runId: string, listener: PipelineEventListener): () => void {
     let set = this.listeners.get(runId);
     if (!set) {
       set = new Set();
@@ -146,7 +146,7 @@ export class WorkflowEngine {
     };
   }
 
-  private emit(runId: string, event: WorkflowEvent): void {
+  private emit(runId: string, event: PipelineEvent): void {
     const set = this.listeners.get(runId);
     if (!set) return;
     for (const listener of set) {
@@ -164,11 +164,11 @@ export class WorkflowEngine {
    * fire-and-forget (INVOKE) and await-the-result usage are supported.
    */
   async run(opts: RunOptions): Promise<RunHandle> {
-    const graph = await this.store.load(opts.workflowId);
+    const graph = await this.store.load(opts.pipelineId);
     const deliveryMode = opts.deliveryMode ?? RUN_DELIVERY_MODE.INVOKE;
 
     const { runId } = await this.store.createRun({
-      workflowId: opts.workflowId,
+      pipelineId: opts.pipelineId,
       userId: opts.context?.userId,
       deliveryMode,
       triggerSource: opts.triggerSource ?? 'MANUAL',
@@ -192,7 +192,7 @@ export class WorkflowEngine {
   }
 
   private async execute(
-    graph: Awaited<ReturnType<WorkflowStore['load']>>,
+    graph: Awaited<ReturnType<PipelineStore['load']>>,
     runId: string,
     deliveryMode: RunDeliveryMode,
     context: RunContext | undefined,
@@ -220,12 +220,12 @@ export class WorkflowEngine {
 
       const compiled = await this.compiler.compile(graph);
 
-      const initialState: WorkflowStateType = {
+      const initialState: PipelineStateType = {
         meta: {
           runId,
-          workflowId: graph.workflow.id,
-          workflowName: graph.workflow.name ?? '',
-          workflowDescription: graph.workflow.description ?? '',
+          pipelineId: graph.pipeline.id,
+          pipelineName: graph.pipeline.name ?? '',
+          pipelineDescription: graph.pipeline.description ?? '',
           deliveryMode,
           context,
           mcpCatalogCache,
@@ -240,7 +240,7 @@ export class WorkflowEngine {
 
       // streamEvents drives live per-node events; we accumulate the final state
       // from the top-level on_chain_end so we still get outputs + cost.
-      let final: WorkflowStateType | undefined;
+      let final: PipelineStateType | undefined;
       const stream = compiled.app.streamEvents(initialState, {
         version: 'v2',
         configurable: { signal: controller.signal },
@@ -254,7 +254,7 @@ export class WorkflowEngine {
         if (translated) this.emit(runId, translated);
         // Capture the top-level graph output (no langgraph_node metadata).
         if (evt.event === 'on_chain_end' && !evt.metadata?.langgraph_node) {
-          const out = (evt.data as { output?: WorkflowStateType })?.output;
+          const out = (evt.data as { output?: PipelineStateType })?.output;
           if (out && typeof out === 'object' && 'outputs' in out) final = out;
         }
       }
@@ -266,10 +266,10 @@ export class WorkflowEngine {
       this.emit(runId, { kind: 'RUN_COMPLETE', status: 'SUCCESS' });
       return { runId, status: 'SUCCESS', outputs, cost };
     } catch (err) {
-      const aborted = err instanceof WorkflowAbortedError || controller.signal.aborted;
+      const aborted = err instanceof PipelineAbortedError || controller.signal.aborted;
       const status: RunStatus = aborted ? 'ABORTED' : 'FAILED';
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`[WorkflowEngine] run ${status}: ${message}`);
+      this.logger.error(`[PipelineEngine] run ${status}: ${message}`);
 
       await this.store.finalizeStaleSteps(runId);
       await this.store.completeRun(runId, {
@@ -290,7 +290,7 @@ export class WorkflowEngine {
         try {
           await mcpCatalog.cleanup();
         } catch (cleanupErr) {
-          this.logger.warn('[WorkflowEngine] MCP catalog cleanup failed', { cleanupErr });
+          this.logger.warn('[PipelineEngine] MCP catalog cleanup failed', { cleanupErr });
         }
       }
     }
@@ -298,11 +298,11 @@ export class WorkflowEngine {
 }
 
 export type {
-  WorkflowStore,
+  PipelineStore,
   StepRecorder,
   LlmFactory,
   CatalogLoader,
   RunContext,
-  WorkflowEvent,
-  WorkflowEventListener,
-} from '@openworkflow/core';
+  PipelineEvent,
+  PipelineEventListener,
+} from '@openpipeline/core';

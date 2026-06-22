@@ -15,7 +15,7 @@
  */
 import { z } from 'zod';
 import { fromJSONSchema } from 'zod/v4';
-import { NOOP_LOGGER, type Logger } from '@openworkflow/core';
+import { NOOP_LOGGER, type Logger } from '@openpipeline/core';
 
 export type ConversionFailureReason = {
   kind: 'fromJsonSchema_throw';

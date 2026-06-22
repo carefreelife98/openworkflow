@@ -1,6 +1,6 @@
 import { Annotation } from '@langchain/langgraph';
 import type { RunDeliveryMode } from './enums.js';
-import type { WorkflowOutputs } from './node-output.js';
+import type { PipelineOutputs } from './node-output.js';
 import { ZERO_COST, mergeCost, type CostBundle } from './cost.js';
 
 /**
@@ -18,13 +18,13 @@ export interface RunContext {
   getOAuthToken?(service: string): Promise<string | undefined> | string | undefined;
 }
 
-export interface WorkflowMeta {
+export interface PipelineMeta {
   runId: string;
-  workflowId: string;
-  /** User-facing workflow name — exposed to the resolver LLM for whole-workflow context. */
-  workflowName: string;
-  /** User-authored workflow description, or "". */
-  workflowDescription: string;
+  pipelineId: string;
+  /** User-facing pipeline name — exposed to the resolver LLM for whole-pipeline context. */
+  pipelineName: string;
+  /** User-authored pipeline description, or "". */
+  pipelineDescription: string;
   deliveryMode: RunDeliveryMode;
   context?: RunContext;
   /**
@@ -44,7 +44,7 @@ export interface NodeMeta {
   status: NodeExecutionStatus;
   startedAt: string;
   finishedAt?: string;
-  error?: WorkflowError;
+  error?: PipelineError;
 }
 
 export type NodeMetaMap = Record<string, NodeMeta>;
@@ -69,7 +69,7 @@ export interface NodeEvent {
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 
-export type WorkflowErrorKind =
+export type PipelineErrorKind =
   | 'VALIDATION'
   | 'NODE_EXECUTION'
   | 'RESOLVER'
@@ -79,8 +79,8 @@ export type WorkflowErrorKind =
   | 'ABORTED'
   | 'COST_CAP';
 
-export interface WorkflowError {
-  kind: WorkflowErrorKind;
+export interface PipelineError {
+  kind: PipelineErrorKind;
   code: string;
   message: string;
   nodeId?: string;
@@ -91,10 +91,10 @@ export interface WorkflowError {
 
 // `any` keeps LangGraph's internal generics off the public .d.ts surface, which
 // avoids cross-package portability warnings — same rationale as the original.
-export const WorkflowStateAnnotation: any = Annotation.Root({
-  meta: Annotation<WorkflowMeta>(),
+export const PipelineStateAnnotation: any = Annotation.Root({
+  meta: Annotation<PipelineMeta>(),
 
-  outputs: Annotation<WorkflowOutputs>({
+  outputs: Annotation<PipelineOutputs>({
     value: (existing, updates) => ({ ...(existing ?? {}), ...(updates ?? {}) }),
     default: () => ({}),
   }),
@@ -115,4 +115,4 @@ export const WorkflowStateAnnotation: any = Annotation.Root({
   }),
 });
 
-export type WorkflowStateType = typeof WorkflowStateAnnotation.State;
+export type PipelineStateType = typeof PipelineStateAnnotation.State;

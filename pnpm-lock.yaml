@@ -17,19 +17,19 @@ importers:
 
   examples/mcp:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@openworkflow/mcp':
+      '@openpipeline/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
-      '@openworkflow/nodes':
+      '@openpipeline/nodes':
         specifier: workspace:*
         version: link:../../packages/nodes
-      '@openworkflow/runtime':
+      '@openpipeline/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
-      '@openworkflow/store-memory':
+      '@openpipeline/store-memory':
         specifier: workspace:*
         version: link:../../packages/store-memory
 
@@ -38,22 +38,22 @@ importers:
       '@dagrejs/dagre':
         specifier: ^1.1.4
         version: 1.1.8
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@openworkflow/nodes':
+      '@openpipeline/nodes':
         specifier: workspace:*
         version: link:../../packages/nodes
-      '@openworkflow/react':
+      '@openpipeline/react':
         specifier: workspace:*
         version: link:../../packages/react
-      '@openworkflow/runtime':
+      '@openpipeline/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
-      '@openworkflow/server':
+      '@openpipeline/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@openworkflow/store-memory':
+      '@openpipeline/store-memory':
         specifier: workspace:*
         version: link:../../packages/store-memory
       '@xyflow/react':
@@ -93,16 +93,16 @@ importers:
 
   examples/prisma:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@openworkflow/nodes':
+      '@openpipeline/nodes':
         specifier: workspace:*
         version: link:../../packages/nodes
-      '@openworkflow/runtime':
+      '@openpipeline/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
-      '@openworkflow/store-prisma':
+      '@openpipeline/store-prisma':
         specifier: workspace:*
         version: link:../../packages/store-prisma
       zod:
@@ -111,16 +111,16 @@ importers:
 
   examples/quickstart:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@openworkflow/nodes':
+      '@openpipeline/nodes':
         specifier: workspace:*
         version: link:../../packages/nodes
-      '@openworkflow/runtime':
+      '@openpipeline/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
-      '@openworkflow/store-memory':
+      '@openpipeline/store-memory':
         specifier: workspace:*
         version: link:../../packages/store-memory
       zod:
@@ -129,19 +129,19 @@ importers:
 
   examples/server:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@openworkflow/nodes':
+      '@openpipeline/nodes':
         specifier: workspace:*
         version: link:../../packages/nodes
-      '@openworkflow/runtime':
+      '@openpipeline/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
-      '@openworkflow/server':
+      '@openpipeline/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@openworkflow/store-memory':
+      '@openpipeline/store-memory':
         specifier: workspace:*
         version: link:../../packages/store-memory
       zod:
@@ -166,7 +166,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(@cfworker/json-schema@4.1.1)(zod@4.4.3)
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -182,7 +182,7 @@ importers:
       '@langchain/langgraph':
         specifier: ^1.2.8
         version: 1.4.4(@langchain/core@1.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -195,7 +195,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -223,19 +223,19 @@ importers:
 
   packages/runtime:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
-      '@openworkflow/nodes':
+      '@openpipeline/nodes':
         specifier: workspace:*
         version: link:../nodes
 
   packages/server:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
-      '@openworkflow/runtime':
+      '@openpipeline/runtime':
         specifier: workspace:*
         version: link:../runtime
     devDependencies:
@@ -245,13 +245,13 @@ importers:
 
   packages/store-memory:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
 
   packages/store-prisma:
     dependencies:
-      '@openworkflow/core':
+      '@openpipeline/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

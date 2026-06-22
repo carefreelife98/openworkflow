@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/nodes",
+  "name": "@openpipeline/nodes",
   "version": "0.1.0",
-  "description": "Execution kernel (compiler, node-runner, registry, binding resolver) and built-in IF/LLM nodes for OpenWorkflow.",
+  "description": "Execution kernel (compiler, node-runner, registry, binding resolver) and built-in IF/LLM nodes for OpenPipeline.",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/nodes#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "langgraph",
     "dag",
     "nodes",
@@ -38,7 +38,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*",
+    "@openpipeline/core": "workspace:*",
     "@langchain/langgraph": "^1.2.8"
   },
   "peerDependencies": {

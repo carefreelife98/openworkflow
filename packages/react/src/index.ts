@@ -1,12 +1,12 @@
-// @openworkflow/react — visual DAG builder as a controlled component library.
+// @openpipeline/react — visual DAG builder as a controlled component library.
 //
 // Usage:
 //   import '@xyflow/react/dist/style.css';
 //   import { ReactFlowProvider } from '@xyflow/react';
-//   import { BuilderCanvas, createBuilderStore } from '@openworkflow/react';
+//   import { BuilderCanvas, createBuilderStore } from '@openpipeline/react';
 //
 //   const store = createBuilderStore();
-//   store.getState().loadDraft(myWorkflowDraft);
+//   store.getState().loadDraft(myPipelineDraft);
 //   <ReactFlowProvider><BuilderCanvas store={store} /></ReactFlowProvider>
 //
 // The consumer owns data loading (loadDraft) and persistence (store.toDraft() ->
@@ -14,7 +14,7 @@
 
 export { createBuilderStore, type BuilderStore, type BuilderState } from './store/builder-store.js';
 export { BuilderCanvas, type BuilderCanvasProps } from './canvas/BuilderCanvas.js';
-export { WorkflowNodeCard, type WorkflowNodeData } from './canvas/WorkflowNodeCard.js';
+export { PipelineNodeCard, type PipelineNodeData } from './canvas/PipelineNodeCard.js';
 export { DeletableEdge } from './canvas/DeletableEdge.js';
 export { StartMarker, EndMarker } from './canvas/markers.js';
 

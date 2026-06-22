@@ -1,5 +1,5 @@
 {
-  "name": "@openworkflow/example-mcp",
+  "name": "@openpipeline/example-mcp",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,10 +8,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*",
-    "@openworkflow/nodes": "workspace:*",
-    "@openworkflow/runtime": "workspace:*",
-    "@openworkflow/mcp": "workspace:*",
-    "@openworkflow/store-memory": "workspace:*"
+    "@openpipeline/core": "workspace:*",
+    "@openpipeline/nodes": "workspace:*",
+    "@openpipeline/runtime": "workspace:*",
+    "@openpipeline/mcp": "workspace:*",
+    "@openpipeline/store-memory": "workspace:*"
   }
 }

@@ -3,12 +3,12 @@ import react from '@vitejs/plugin-react';
 import { createBackend } from './backend.js';
 
 /**
- * Mounts the OpenWorkflow backend as Vite dev middleware so `pnpm dev` serves
- * both the API (`/workflow/*`, `/catalog`) and the React app from one process.
+ * Mounts the OpenPipeline backend as Vite dev middleware so `pnpm dev` serves
+ * both the API (`/pipeline/*`, `/catalog`) and the React app from one process.
  */
-function openworkflowApi() {
+function openpipelineApi() {
   return {
-    name: 'openworkflow-api',
+    name: 'openpipeline-api',
     configureServer(server: { middlewares: Connect.Server }) {
       const { catalog, httpHandler, seedId } = createBackend();
       server.middlewares.use((req, res, next) => {
@@ -20,10 +20,10 @@ function openworkflowApi() {
         }
         if (url === '/seed') {
           res.setHeader('Content-Type', 'application/json');
-          void Promise.resolve(seedId).then((id) => res.end(JSON.stringify({ workflowId: id })));
+          void Promise.resolve(seedId).then((id) => res.end(JSON.stringify({ pipelineId: id })));
           return;
         }
-        if (url.startsWith('/workflow')) {
+        if (url.startsWith('/pipeline')) {
           httpHandler(req as never, res as never);
           return;
         }
@@ -34,6 +34,6 @@ function openworkflowApi() {
 }
 
 export default defineConfig({
-  plugins: [react(), openworkflowApi()],
+  plugins: [react(), openpipelineApi()],
   server: { port: 5173 },
 });

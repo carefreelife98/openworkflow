@@ -1,4 +1,4 @@
-// @openworkflow/nodes — execution kernel + built-in nodes.
+// @openpipeline/nodes — execution kernel + built-in nodes.
 
 export { NodeSpecRegistry, type NodeResolveContext } from './registry.js';
 export { ValueBindingResolver } from './value-binding-resolver.js';
@@ -8,7 +8,7 @@ export {
   type AutoParamResolveResult,
 } from './auto-param-resolver.js';
 export { makeNodeRunner, type NodeRunnerFn, type NodeRunnerDeps } from './node-runner.js';
-export { WorkflowCompiler, type CompilerDeps, type CompiledWorkflow } from './compiler.js';
+export { PipelineCompiler, type CompilerDeps, type CompiledPipeline } from './compiler.js';
 export { translateEvent, type LangGraphStreamEvent } from './event-translator.js';
 
 // Built-in node specs

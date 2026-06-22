@@ -20,12 +20,12 @@ import {
   stripMarkers,
 } from '../lib/serializer.js';
 import { isMarkerEdge, isStartMarkerEdge, sourceLabelFromHandle, START_MARKER_ID, END_MARKER_ID } from '../lib/markers.js';
-import { WorkflowNodeCard, type WorkflowNodeData } from './WorkflowNodeCard.js';
+import { PipelineNodeCard, type PipelineNodeData } from './PipelineNodeCard.js';
 import { DeletableEdge } from './DeletableEdge.js';
 import { StartMarker, EndMarker } from './markers.js';
 
 const DEFAULT_NODE_TYPES: NodeTypes = {
-  workflowNode: WorkflowNodeCard,
+  pipelineNode: PipelineNodeCard,
   startMarker: StartMarker,
   endMarker: EndMarker,
 };
@@ -94,8 +94,8 @@ export function BuilderCanvas(props: BuilderCanvasProps): JSX.Element {
     });
     if (!props.nodeRunStatus) return built;
     return built.map((n) =>
-      n.type === 'workflowNode'
-        ? { ...n, data: { ...(n.data as WorkflowNodeData), runStatus: props.nodeRunStatus![n.id] } }
+      n.type === 'pipelineNode'
+        ? { ...n, data: { ...(n.data as PipelineNodeData), runStatus: props.nodeRunStatus![n.id] } }
         : n,
     );
   }, [nodes, startMarker, endMarker, strings.startLabel, strings.endLabel, props.nodeRunStatus]);
@@ -196,7 +196,7 @@ export function BuilderCanvas(props: BuilderCanvasProps): JSX.Element {
       >
         <Background gap={24} color="#e2e8f0" />
         <Controls showInteractive={false} />
-        <MiniMap pannable zoomable nodeColor={(n: RfNode) => (n.type === 'workflowNode' ? '#6366f1' : '#94a3b8')} />
+        <MiniMap pannable zoomable nodeColor={(n: RfNode) => (n.type === 'pipelineNode' ? '#6366f1' : '#94a3b8')} />
       </ReactFlow>
 
       {isEmpty && (

@@ -1,4 +1,4 @@
-import type { NodeSpec, NodeType, McpNodeResolver, WorkflowNodeOutput } from '@openworkflow/core';
+import type { NodeSpec, NodeType, McpNodeResolver, PipelineNodeOutput } from '@openpipeline/core';
 
 export interface NodeResolveContext {
   userId?: string;
@@ -21,7 +21,7 @@ export class NodeSpecRegistry {
 
   constructor(private readonly mcpResolver?: McpNodeResolver) {}
 
-  register<TInput, TOutput extends WorkflowNodeOutput>(spec: NodeSpec<TInput, TOutput>): this {
+  register<TInput, TOutput extends PipelineNodeOutput>(spec: NodeSpec<TInput, TOutput>): this {
     if (this.specs.has(spec.key)) {
       throw new Error(`Duplicate NodeSpec: ${spec.key}`);
     }
@@ -34,7 +34,7 @@ export class NodeSpecRegistry {
       if (!this.mcpResolver) {
         throw new Error(
           `[NodeSpecRegistry] MCP node "${key}" requires an McpNodeResolver. ` +
-            `Pass one to the registry (see @openworkflow/mcp) or remove MCP nodes from the graph.`,
+            `Pass one to the registry (see @openpipeline/mcp) or remove MCP nodes from the graph.`,
         );
       }
       return this.mcpResolver.resolveSpec(key, {

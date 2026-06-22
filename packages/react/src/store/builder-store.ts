@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ValueBinding, WorkflowDraft } from '@openworkflow/core';
+import type { ValueBinding, PipelineDraft } from '@openpipeline/core';
 import type { BuilderNode, BuilderEdge } from '../types.js';
 
 /** Derive entry (no incoming) and exit (no outgoing) nodes. */
@@ -23,7 +23,7 @@ function deriveEntryExit(
 }
 
 export interface BuilderState {
-  workflowId: string | null;
+  pipelineId: string | null;
   name: string;
   description: string;
   nodes: BuilderNode[];
@@ -37,7 +37,7 @@ export interface BuilderState {
   dirty: boolean;
 
   // ── actions ──
-  loadDraft(draft: WorkflowDraft & { id?: string }): void;
+  loadDraft(draft: PipelineDraft & { id?: string }): void;
   reset(): void;
   setName(name: string): void;
   setDescription(d: string): void;
@@ -57,7 +57,7 @@ export interface BuilderState {
   removeEndSource(nodeId: string): void;
   selectNode(id: string | null): void;
   markClean(): void;
-  toDraft(): WorkflowDraft;
+  toDraft(): PipelineDraft;
 }
 
 const genId = (): string =>
@@ -66,13 +66,13 @@ const genId = (): string =>
     : `n_${Math.random().toString(36).slice(2)}`;
 
 /**
- * Create a workflow-builder store. Unlike the Mate-X original, this carries only
+ * Create a pipeline-builder store. Unlike the Mate-X original, this carries only
  * graph-editing state — no scope/purpose/category, no planner-compile progress,
- * no schedule. Env/auth-free; types come from @openworkflow/core.
+ * no schedule. Env/auth-free; types come from @openpipeline/core.
  */
 export function createBuilderStore() {
   return create<BuilderState>((set, get) => ({
-    workflowId: null,
+    pipelineId: null,
     name: '',
     description: '',
     nodes: [],
@@ -102,7 +102,7 @@ export function createBuilderStore() {
       }));
       const { startTargets, endSources } = deriveEntryExit(nodes, edges);
       set({
-        workflowId: draft.id ?? null,
+        pipelineId: draft.id ?? null,
         name: draft.name,
         description: draft.description ?? '',
         nodes,
@@ -116,7 +116,7 @@ export function createBuilderStore() {
 
     reset() {
       set({
-        workflowId: null,
+        pipelineId: null,
         name: '',
         description: '',
         nodes: [],
@@ -218,10 +218,10 @@ export function createBuilderStore() {
     selectNode: (id) => set({ selectedNodeId: id }),
     markClean: () => set({ dirty: false }),
 
-    toDraft(): WorkflowDraft {
+    toDraft(): PipelineDraft {
       const s = get();
       return {
-        id: s.workflowId ?? undefined,
+        id: s.pipelineId ?? undefined,
         name: s.name,
         description: s.description || undefined,
         nodes: s.nodes.map((n) => ({

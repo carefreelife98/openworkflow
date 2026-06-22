@@ -1,13 +1,13 @@
-// The playground backend: an OpenWorkflow engine + node catalog + the HTTP/SSE
+// The playground backend: an OpenPipeline engine + node catalog + the HTTP/SSE
 // handlers. Mounted as Vite dev middleware (see vite.config.ts) so `pnpm dev`
 // serves both the API and the React app from one process. This same wiring works
 // behind Express/Fastify in production.
-import { WorkflowEngine } from '@openworkflow/runtime';
-import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openworkflow/nodes';
-import { MemoryStore } from '@openworkflow/store-memory';
-import { createWorkflowHandlers, createNodeHttpHandler } from '@openworkflow/server';
-import { defineNode } from '@openworkflow/core';
-import type { NodeSpecDescriptor } from '@openworkflow/react';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openpipeline/nodes';
+import { MemoryStore } from '@openpipeline/store-memory';
+import { createPipelineHandlers, createNodeHttpHandler } from '@openpipeline/server';
+import { defineNode } from '@openpipeline/core';
+import type { NodeSpecDescriptor } from '@openpipeline/react';
 import { z } from 'zod';
 
 // A couple of demo tool nodes so the palette has something to offer.
@@ -34,7 +34,7 @@ const reverseNode = defineNode({
 });
 
 export function createBackend() {
-  const engine = new WorkflowEngine({
+  const engine = new PipelineEngine({
     store: new MemoryStore(),
     // A stub LLM so llm.invoke works without API keys in the demo.
     llmFactory: { createModel: () => ({ invoke: async (m: unknown) => ({ content: `(demo) ${JSON.stringify(m).slice(0, 60)}`, usage_metadata: { input_tokens: 5, output_tokens: 3, total_tokens: 8 } }) }) },
@@ -53,14 +53,14 @@ export function createBackend() {
     { key: 'llm.invoke', nodeType: 'LLM', displayName: 'LLM', description: 'Invoke a model.', icon: 'sparkles', inputs: [{ name: 'userPrompt', required: true }, { name: 'model', required: true }] },
   ];
 
-  const handlers = createWorkflowHandlers(engine);
+  const handlers = createPipelineHandlers(engine);
   const httpHandler = createNodeHttpHandler(handlers);
 
-  // Seed a starter workflow so the canvas isn't empty on first load.
+  // Seed a starter pipeline so the canvas isn't empty on first load.
   const seedId = engine.save({
     name: 'starter',
     nodes: [
-      { id: 'u', nodeType: 'TOOL', key: 'tool.uppercase', label: 'Uppercase', inputs: { text: { kind: 'literal', value: 'hello openworkflow' } } },
+      { id: 'u', nodeType: 'TOOL', key: 'tool.uppercase', label: 'Uppercase', inputs: { text: { kind: 'literal', value: 'hello openpipeline' } } },
       { id: 'r', nodeType: 'TOOL', key: 'tool.reverse', label: 'Reverse', inputs: { text: { kind: 'state', path: 'outputs.u.out' } } },
     ],
     edges: [{ id: 'e1', fromNodeId: 'u', toNodeId: 'r' }],

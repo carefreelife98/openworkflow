@@ -1,22 +1,22 @@
-# @openworkflow/store-memory
+# @openpipeline/store-memory
 
-In-memory WorkflowStore + StepRecorder reference implementation for OpenWorkflow.
+In-memory PipelineStore + StepRecorder reference implementation for OpenPipeline.
 
-Part of [OpenWorkflow](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool workflows as LangGraph DAGs.
+Part of [OpenPipeline](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool pipelines as LangGraph DAGs.
 
 ## Install
 
 ```bash
-npm i @openworkflow/store-memory
+npm i @openpipeline/store-memory
 ```
 
 ## Usage
 
-An in-memory `WorkflowStore` + `StepRecorder`. Makes "install and run a workflow" work with zero database.
+An in-memory `PipelineStore` + `StepRecorder`. Makes "install and run a pipeline" work with zero database.
 
 ```ts
-import { MemoryStore } from '@openworkflow/store-memory';
-const engine = new WorkflowEngine({ store: new MemoryStore(), llmFactory });
+import { MemoryStore } from '@openpipeline/store-memory';
+const engine = new PipelineEngine({ store: new MemoryStore(), llmFactory });
 ```
 
 See the [root README](https://github.com/carefreelife98/openworkflow#readme) for the full quickstart and the playground.

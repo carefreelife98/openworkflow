@@ -1,27 +1,27 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { WorkflowDraft } from '@openworkflow/core';
-import type { WorkflowHandlers } from './handlers.js';
+import type { PipelineDraft } from '@openpipeline/core';
+import type { PipelineHandlers } from './handlers.js';
 import { sseFrame, SSE_HEADERS } from './sse.js';
 
 /**
- * A tiny Node `http` request handler wiring the workflow routes. Drop it into
- * `http.createServer(...)`. For real apps, prefer mounting `WorkflowHandlers`
+ * A tiny Node `http` request handler wiring the pipeline routes. Drop it into
+ * `http.createServer(...)`. For real apps, prefer mounting `PipelineHandlers`
  * into your framework (Express/Fastify/Hono) — this adapter exists so the package
  * runs out of the box.
  *
- * Routes (all under `basePath`, default `/workflow`):
- *   POST   /workflow                  -> save     { ...WorkflowDraft }  => { workflowId }
- *   GET    /workflow/:id              -> load
- *   GET    /workflow/:id/runs         -> list runs
- *   POST   /workflow/run              -> run (non-streaming)  { workflowId }
- *   POST   /workflow/run/:runId/abort -> abort
- *   GET    /workflow/runs/:runId/stream?workflowId=... -> SSE live events
+ * Routes (all under `basePath`, default `/pipeline`):
+ *   POST   /pipeline                  -> save     { ...PipelineDraft }  => { pipelineId }
+ *   GET    /pipeline/:id              -> load
+ *   GET    /pipeline/:id/runs         -> list runs
+ *   POST   /pipeline/run              -> run (non-streaming)  { pipelineId }
+ *   POST   /pipeline/run/:runId/abort -> abort
+ *   GET    /pipeline/runs/:runId/stream?pipelineId=... -> SSE live events
  */
 export function createNodeHttpHandler(
-  handlers: WorkflowHandlers,
+  handlers: PipelineHandlers,
   opts: { basePath?: string } = {},
 ): (req: IncomingMessage, res: ServerResponse) => void {
-  const base = opts.basePath ?? '/workflow';
+  const base = opts.basePath ?? '/pipeline';
 
   return (req, res) => {
     void handle(req, res).catch((err) => {
@@ -43,21 +43,21 @@ export function createNodeHttpHandler(
     }
     const rest = path.slice(base.length); // '' | '/:id' | '/run' | '/runs/:id/stream' ...
 
-    // POST /workflow  (save)
+    // POST /pipeline  (save)
     if (method === 'POST' && (rest === '' || rest === '/')) {
-      const draft = (await readJson(req)) as WorkflowDraft;
-      json(res, 200, await handlers.saveWorkflow(draft));
+      const draft = (await readJson(req)) as PipelineDraft;
+      json(res, 200, await handlers.savePipeline(draft));
       return;
     }
 
-    // POST /workflow/run  (run, non-streaming)
+    // POST /pipeline/run  (run, non-streaming)
     if (method === 'POST' && rest === '/run') {
-      const body = (await readJson(req)) as { workflowId: string };
-      json(res, 200, await handlers.runWorkflow({ workflowId: body.workflowId }));
+      const body = (await readJson(req)) as { pipelineId: string };
+      json(res, 200, await handlers.runPipeline({ pipelineId: body.pipelineId }));
       return;
     }
 
-    // POST /workflow/run/:runId/abort
+    // POST /pipeline/run/:runId/abort
     const abortMatch = rest.match(/^\/run\/([^/]+)\/abort$/);
     if (method === 'POST' && abortMatch) {
       handlers.abortRun(abortMatch[1]!);
@@ -65,23 +65,23 @@ export function createNodeHttpHandler(
       return;
     }
 
-    // GET /workflow/runs/:runId/stream  (SSE)
+    // GET /pipeline/runs/:runId/stream  (SSE)
     const streamMatch = rest.match(/^\/runs\/([^/]+)\/stream$/);
     if (method === 'GET' && streamMatch) {
-      const workflowId = url.searchParams.get('workflowId');
-      if (!workflowId) {
-        json(res, 400, { error: 'workflowId query param required' });
+      const pipelineId = url.searchParams.get('pipelineId');
+      if (!pipelineId) {
+        json(res, 400, { error: 'pipelineId query param required' });
         return;
       }
       res.writeHead(200, SSE_HEADERS);
-      await handlers.runAndStream({ workflowId }, (event) => {
+      await handlers.runAndStream({ pipelineId }, (event) => {
         res.write(sseFrame(event));
       });
       res.end();
       return;
     }
 
-    // GET /workflow/:id/runs
+    // GET /pipeline/:id/runs
     const runsMatch = rest.match(/^\/([^/]+)\/runs$/);
     if (method === 'GET' && runsMatch) {
       const limit = url.searchParams.get('limit');
@@ -89,10 +89,10 @@ export function createNodeHttpHandler(
       return;
     }
 
-    // GET /workflow/:id
+    // GET /pipeline/:id
     const getMatch = rest.match(/^\/([^/]+)$/);
     if (method === 'GET' && getMatch) {
-      json(res, 200, await handlers.getWorkflow(getMatch[1]!));
+      json(res, 200, await handlers.getPipeline(getMatch[1]!));
       return;
     }
 

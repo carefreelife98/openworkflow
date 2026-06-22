@@ -1,9 +1,9 @@
 /**
- * OpenWorkflow MCP example — runs a workflow with an `mcp:` node end to end.
+ * OpenPipeline MCP example — runs a pipeline with an `mcp:` node end to end.
  *
- * For a real MCP server you'd use `createEnvCatalogLoader` from @openworkflow/mcp:
+ * For a real MCP server you'd use `createEnvCatalogLoader` from @openpipeline/mcp:
  *
- *   import { createEnvCatalogLoader, McpNodeResolverImpl } from '@openworkflow/mcp';
+ *   import { createEnvCatalogLoader, McpNodeResolverImpl } from '@openpipeline/mcp';
  *   const catalogLoader = createEnvCatalogLoader({
  *     servers: [
  *       { key: 'github', transportType: 'stdio', command: 'npx',
@@ -11,17 +11,17 @@
  *         authType: 'none', env: { GITHUB_TOKEN: process.env.GH_TOKEN! } },
  *     ],
  *   });
- *   const engine = new WorkflowEngine({ store, llmFactory, catalogLoader,
+ *   const engine = new PipelineEngine({ store, llmFactory, catalogLoader,
  *     mcpNodeResolver: new McpNodeResolverImpl() });
  *
  * To keep this example hermetic (no network, no child processes), we supply a
  * MOCK CatalogLoader that satisfies the same interface. The engine → resolver →
  * tool.invoke path is exactly the same as with a real server.
  */
-import { WorkflowEngine } from '@openworkflow/runtime';
-import { MemoryStore } from '@openworkflow/store-memory';
-import { McpNodeResolverImpl } from '@openworkflow/mcp';
-import type { CatalogLoader } from '@openworkflow/core';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { MemoryStore } from '@openpipeline/store-memory';
+import { McpNodeResolverImpl } from '@openpipeline/mcp';
+import type { CatalogLoader } from '@openpipeline/core';
 
 // A mock CatalogLoader exposing one "weather" provider with one tool.
 const mockCatalogLoader: CatalogLoader = {
@@ -58,7 +58,7 @@ const mockCatalogLoader: CatalogLoader = {
   },
 };
 
-const engine = new WorkflowEngine({
+const engine = new PipelineEngine({
   store: new MemoryStore(),
   llmFactory: { createModel: () => ({ invoke: async () => ({ content: '' }) }) },
   catalogLoader: mockCatalogLoader,
@@ -66,7 +66,7 @@ const engine = new WorkflowEngine({
   logger: console,
 });
 
-const workflowId = await engine.save({
+const pipelineId = await engine.save({
   name: 'mcp-forecast',
   nodes: [
     {
@@ -80,7 +80,7 @@ const workflowId = await engine.save({
   edges: [],
 });
 
-const { runId, done } = await engine.run({ workflowId });
+const { runId, done } = await engine.run({ pipelineId });
 const result = await done;
 
 console.log('\n── Result ──────────────────────────────');

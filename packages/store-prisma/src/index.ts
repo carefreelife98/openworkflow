@@ -1,27 +1,27 @@
 import {
   ZERO_COST,
   mergeCost,
-  type WorkflowStore,
+  type PipelineStore,
   type StepRecorder,
-  type WorkflowWithGraph,
-  type WorkflowDraft,
+  type PipelineWithGraph,
+  type PipelineDraft,
   type RunCreate,
   type RunComplete,
   type RunSummary,
   type StepStart,
   type StepFinish,
-  type WorkflowRow,
-  type WorkflowNodeRow,
-  type WorkflowEdgeRow,
+  type PipelineRow,
+  type PipelineNodeRow,
+  type PipelineEdgeRow,
   type CostBundle,
   type RunStatus,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 import type { PrismaClientLike } from './prisma-types.js';
 
 export type { PrismaClientLike } from './prisma-types.js';
 
 /**
- * Postgres-backed WorkflowStore + StepRecorder (Prisma). Faithful port of the
+ * Postgres-backed PipelineStore + StepRecorder (Prisma). Faithful port of the
  * Mate-X repositories with all multi-tenancy removed:
  *   - the atomic cost JSONB update (raw SQL, race-free)
  *   - the fan-in-safe step sequencing (findFirst desc -> create, serialized)
@@ -29,50 +29,50 @@ export type { PrismaClientLike } from './prisma-types.js';
  *
  * Pass a PrismaClient generated from this package's `prisma/schema.prisma`.
  */
-export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
+export class PrismaPipelineStore implements PipelineStore, StepRecorder {
   // Per-run mutex so concurrent fan-in `start()` calls don't race on sequenceIndex.
   private readonly startQueues = new Map<string, Promise<unknown>>();
 
   constructor(private readonly prisma: PrismaClientLike) {}
 
-  // ── WorkflowStore ─────────────────────────────────────────────────────────
+  // ── PipelineStore ─────────────────────────────────────────────────────────
 
-  async load(workflowId: string): Promise<WorkflowWithGraph> {
-    const wf = (await this.prisma.workflow.findUnique({
-      where: { id: workflowId },
+  async load(pipelineId: string): Promise<PipelineWithGraph> {
+    const wf = (await this.prisma.pipeline.findUnique({
+      where: { id: pipelineId },
       include: { nodes: { where: { isDeleted: false } }, edges: true },
     })) as (Record<string, unknown> & { nodes: unknown[]; edges: unknown[] }) | null;
-    if (!wf) throw new Error(`Workflow not found: ${workflowId}`);
+    if (!wf) throw new Error(`Pipeline not found: ${pipelineId}`);
 
     const { nodes, edges, ...row } = wf;
     return {
-      workflow: row as unknown as WorkflowRow,
-      nodes: (nodes as WorkflowNodeRow[]).map((n) => ({ ...n, inputs: n.inputs ?? {} })),
-      edges: edges as WorkflowEdgeRow[],
+      pipeline: row as unknown as PipelineRow,
+      nodes: (nodes as PipelineNodeRow[]).map((n) => ({ ...n, inputs: n.inputs ?? {} })),
+      edges: edges as PipelineEdgeRow[],
     };
   }
 
-  async save(draft: WorkflowDraft): Promise<string> {
-    if (draft.id) return this.updateWorkflow(draft.id, draft);
-    return this.createWorkflow(draft);
+  async save(draft: PipelineDraft): Promise<string> {
+    if (draft.id) return this.updatePipeline(draft.id, draft);
+    return this.createPipeline(draft);
   }
 
-  private async createWorkflow(draft: WorkflowDraft): Promise<string> {
+  private async createPipeline(draft: PipelineDraft): Promise<string> {
     return this.prisma.$transaction(async (tx) => {
-      const workflow = await tx.workflow.create({
+      const pipeline = await tx.pipeline.create({
         data: {
           name: draft.name,
           description: draft.description ?? null,
           outputJsonSchema: (draft.outputJsonSchema ?? null) as never,
         },
       });
-      const workflowId = workflow.id;
+      const pipelineId = pipeline.id;
 
       if (draft.nodes.length > 0) {
-        await tx.workflowNode.createMany({
+        await tx.pipelineNode.createMany({
           data: draft.nodes.map((n) => ({
             id: n.id,
-            workflowId,
+            pipelineId,
             nodeType: n.nodeType,
             key: n.key,
             label: n.label,
@@ -83,24 +83,24 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
         });
       }
       if (draft.edges.length > 0) {
-        await tx.workflowEdge.createMany({
+        await tx.pipelineEdge.createMany({
           data: draft.edges.map((e) => ({
             id: e.id,
-            workflowId,
+            pipelineId,
             fromNodeId: e.fromNodeId,
             toNodeId: e.toNodeId,
             label: e.label ?? null,
           })),
         });
       }
-      return workflowId;
+      return pipelineId;
     });
   }
 
   /** Diff update — no data loss. Update/create draft nodes, soft-delete missing ones, recreate edges. */
-  private async updateWorkflow(id: string, draft: WorkflowDraft): Promise<string> {
+  private async updatePipeline(id: string, draft: PipelineDraft): Promise<string> {
     return this.prisma.$transaction(async (tx) => {
-      await tx.workflow.update({
+      await tx.pipeline.update({
         where: { id },
         data: {
           name: draft.name,
@@ -109,10 +109,10 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
         },
       });
 
-      await tx.workflowEdge.deleteMany({ where: { workflowId: id } });
+      await tx.pipelineEdge.deleteMany({ where: { pipelineId: id } });
 
-      const existing = (await tx.workflowNode.findMany({
-        where: { workflowId: id },
+      const existing = (await tx.pipelineNode.findMany({
+        where: { pipelineId: id },
         select: { id: true, isDeleted: true },
       })) as Array<{ id: string; isDeleted: boolean }>;
       const existingIds = new Set(existing.map((n) => n.id));
@@ -120,7 +120,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
 
       const toSoftDelete = existing.filter((n) => !draftIds.has(n.id) && !n.isDeleted).map((n) => n.id);
       if (toSoftDelete.length > 0) {
-        await tx.workflowNode.updateMany({
+        await tx.pipelineNode.updateMany({
           where: { id: { in: toSoftDelete } },
           data: { isDeleted: true, deletedAt: new Date() },
         });
@@ -128,7 +128,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
 
       for (const n of draft.nodes) {
         const nodeData = {
-          workflowId: id,
+          pipelineId: id,
           nodeType: n.nodeType,
           key: n.key,
           label: n.label,
@@ -139,16 +139,16 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
           deletedAt: null,
         };
         if (existingIds.has(n.id)) {
-          await tx.workflowNode.update({ where: { id: n.id }, data: nodeData });
+          await tx.pipelineNode.update({ where: { id: n.id }, data: nodeData });
         } else {
-          await tx.workflowNode.create({ data: { id: n.id, ...nodeData } });
+          await tx.pipelineNode.create({ data: { id: n.id, ...nodeData } });
         }
       }
 
       if (draft.edges.length > 0) {
-        await tx.workflowEdge.createMany({
+        await tx.pipelineEdge.createMany({
           data: draft.edges.map((e) => ({
-            workflowId: id,
+            pipelineId: id,
             fromNodeId: e.fromNodeId,
             toNodeId: e.toNodeId,
             label: e.label ?? null,
@@ -161,9 +161,9 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
   }
 
   async createRun(run: RunCreate): Promise<{ runId: string; startedAt: Date }> {
-    const row = await this.prisma.workflowRun.create({
+    const row = await this.prisma.pipelineRun.create({
       data: {
-        workflowId: run.workflowId,
+        pipelineId: run.pipelineId,
         userId: run.userId ?? null,
         deliveryMode: run.deliveryMode,
         triggerSource: run.triggerSource ?? 'MANUAL',
@@ -177,7 +177,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
 
   async completeRun(runId: string, result: RunComplete): Promise<void> {
     const isFailure = result.status === 'FAILED' || result.status === 'ABORTED';
-    await this.prisma.workflowRun.update({
+    await this.prisma.pipelineRun.update({
       where: { id: runId },
       data: {
         status: result.status,
@@ -196,7 +196,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
   /** Atomic cost increment via parameterized raw SQL — race-free read-modify-write. */
   async updateRunCostAtomic(runId: string, delta: CostBundle): Promise<void> {
     await this.prisma.$executeRawUnsafe(
-      `UPDATE workflow_run
+      `UPDATE pipeline_run
        SET cost = jsonb_build_object(
          'tokens', jsonb_build_object(
            'input',  (cost->'tokens'->>'input')::int  + $1,
@@ -216,15 +216,15 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
     );
   }
 
-  async listRuns(workflowId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
-    const rows = (await this.prisma.workflowRun.findMany({
-      where: { workflowId },
+  async listRuns(pipelineId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
+    const rows = (await this.prisma.pipelineRun.findMany({
+      where: { pipelineId },
       orderBy: { startedAt: 'desc' },
       ...(opts?.limit ? { take: opts.limit } : {}),
-      select: { id: true, workflowId: true, status: true, startedAt: true, finishedAt: true, cost: true },
+      select: { id: true, pipelineId: true, status: true, startedAt: true, finishedAt: true, cost: true },
     })) as Array<{
       id: string;
-      workflowId: string;
+      pipelineId: string;
       status: RunStatus;
       startedAt: Date;
       finishedAt: Date | null;
@@ -232,7 +232,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
     }>;
     return rows.map((r) => ({
       id: r.id,
-      workflowId: r.workflowId,
+      pipelineId: r.pipelineId,
       status: r.status,
       startedAt: r.startedAt,
       finishedAt: r.finishedAt ?? undefined,
@@ -248,14 +248,14 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
 
   private async startInternal(step: StepStart, parentStepId?: string): Promise<string> {
     return this.prisma.$transaction(async (tx) => {
-      const last = (await tx.workflowRunStep.findFirst({
+      const last = (await tx.pipelineRunStep.findFirst({
         where: { runId: step.runId },
         orderBy: { sequenceIndex: 'desc' },
         select: { sequenceIndex: true },
       })) as { sequenceIndex: number } | null;
       const nextIndex = (last?.sequenceIndex ?? -1) + 1;
 
-      const created = await tx.workflowRunStep.create({
+      const created = await tx.pipelineRunStep.create({
         data: {
           runId: step.runId,
           nodeId: step.nodeId,
@@ -272,7 +272,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
   }
 
   async finish(stepId: string, result: StepFinish): Promise<void> {
-    await this.prisma.workflowRunStep.update({
+    await this.prisma.pipelineRunStep.update({
       where: { id: stepId },
       data: {
         status: result.status,
@@ -301,7 +301,7 @@ export class PrismaWorkflowStore implements WorkflowStore, StepRecorder {
   }
 
   async finalizeStaleSteps(runId: string): Promise<void> {
-    await this.prisma.workflowRunStep.updateMany({
+    await this.prisma.pipelineRunStep.updateMany({
       where: { runId, status: 'RUNNING' },
       data: { status: 'FAILED', finishedAt: new Date() },
     });

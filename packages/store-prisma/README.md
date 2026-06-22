@@ -1,22 +1,22 @@
-# @openworkflow/store-prisma
+# @openpipeline/store-prisma
 
-Postgres WorkflowStore + StepRecorder adapter for OpenWorkflow (Prisma).
+Postgres PipelineStore + StepRecorder adapter for OpenPipeline (Prisma).
 
-Part of [OpenWorkflow](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool workflows as LangGraph DAGs.
+Part of [OpenPipeline](https://github.com/carefreelife98/openworkflow) — a framework-agnostic engine for compiling and running MCP-tool pipelines as LangGraph DAGs.
 
 ## Install
 
 ```bash
-npm i @openworkflow/store-prisma
+npm i @openpipeline/store-prisma
 ```
 
 ## Usage
 
-A Postgres `WorkflowStore` + `StepRecorder` (Prisma). Ships a clean 5-model schema with no multi-tenancy. Apply it with `prisma migrate` using `@openworkflow/store-prisma/schema.prisma` and set `OPENWORKFLOW_DATABASE_URL`.
+A Postgres `PipelineStore` + `StepRecorder` (Prisma). Ships a clean 5-model schema with no multi-tenancy. Apply it with `prisma migrate` using `@openpipeline/store-prisma/schema.prisma` and set `OPENPIPELINE_DATABASE_URL`.
 
 ```ts
-import { PrismaWorkflowStore } from '@openworkflow/store-prisma';
-const store = new PrismaWorkflowStore(new PrismaClient());
+import { PrismaPipelineStore } from '@openpipeline/store-prisma';
+const store = new PrismaPipelineStore(new PrismaClient());
 ```
 
 See the [root README](https://github.com/carefreelife98/openworkflow#readme) for the full quickstart and the playground.

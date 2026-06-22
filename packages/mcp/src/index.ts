@@ -1,4 +1,4 @@
-// @openworkflow/mcp — optional MCP integration.
+// @openpipeline/mcp — optional MCP integration.
 // Single-tenant by default (personal direct use); a CatalogPolicy adds
 // multi-tenant curation / allowlists / per-user OAuth without touching core.
 

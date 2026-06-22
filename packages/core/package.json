@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/core",
+  "name": "@openpipeline/core",
   "version": "0.1.0",
-  "description": "Framework-agnostic execution kernel and interface contracts for OpenWorkflow.",
+  "description": "Framework-agnostic execution kernel and interface contracts for OpenPipeline.",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/core#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "langgraph",
     "dag",
     "mcp",

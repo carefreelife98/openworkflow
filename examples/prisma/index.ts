@@ -1,30 +1,30 @@
 /**
- * @openworkflow/store-prisma smoke run — drives the engine through
- * PrismaWorkflowStore. A real deployment uses a PrismaClient generated from the
+ * @openpipeline/store-prisma smoke run — drives the engine through
+ * PrismaPipelineStore. A real deployment uses a PrismaClient generated from the
  * package's prisma/schema.prisma against Postgres:
  *
- *   import { PrismaClient } from '@openworkflow/store-prisma/src/generated';
- *   const store = new PrismaWorkflowStore(new PrismaClient());
+ *   import { PrismaClient } from '@openpipeline/store-prisma/src/generated';
+ *   const store = new PrismaPipelineStore(new PrismaClient());
  *
  * To keep this example hermetic (no Postgres), we back the store with a tiny
  * in-memory object that satisfies the structural PrismaClientLike interface.
  * The store's logic (diff save, sequenced steps, atomic cost SQL path) is
  * exercised exactly as it would be against a real client.
  */
-import { WorkflowEngine } from '@openworkflow/runtime';
-import { createIfNodeSpec } from '@openworkflow/nodes';
-import { PrismaWorkflowStore, type PrismaClientLike } from '@openworkflow/store-prisma';
-import { defineNode } from '@openworkflow/core';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { createIfNodeSpec } from '@openpipeline/nodes';
+import { PrismaPipelineStore, type PrismaClientLike } from '@openpipeline/store-prisma';
+import { defineNode } from '@openpipeline/core';
 import { z } from 'zod';
 
 // ── Minimal in-memory fake satisfying PrismaClientLike ──────────────────────
 function createFakePrisma(): PrismaClientLike {
   const tables: Record<string, Map<string, Record<string, unknown>>> = {
-    workflow: new Map(),
-    workflowNode: new Map(),
-    workflowEdge: new Map(),
-    workflowRun: new Map(),
-    workflowRunStep: new Map(),
+    pipeline: new Map(),
+    pipelineNode: new Map(),
+    pipelineEdge: new Map(),
+    pipelineRun: new Map(),
+    pipelineRunStep: new Map(),
   };
   let seq = 0;
   const id = (p: string) => `${p}_${(seq++).toString(36)}`;
@@ -62,10 +62,10 @@ function createFakePrisma(): PrismaClientLike {
         if (!row) return null;
         const out = { ...row };
         if (include && (include as Record<string, unknown>).nodes) {
-          out.nodes = [...tables.workflowNode!.values()].filter((n) => n.workflowId === row.id && !n.isDeleted);
+          out.nodes = [...tables.pipelineNode!.values()].filter((n) => n.pipelineId === row.id && !n.isDeleted);
         }
         if (include && (include as Record<string, unknown>).edges) {
-          out.edges = [...tables.workflowEdge!.values()].filter((e) => e.workflowId === row.id);
+          out.edges = [...tables.pipelineEdge!.values()].filter((e) => e.pipelineId === row.id);
         }
         return out;
       },
@@ -111,16 +111,16 @@ function createFakePrisma(): PrismaClientLike {
   };
 
   const client: PrismaClientLike = {
-    workflow: delegate('workflow'),
-    workflowNode: delegate('workflowNode'),
-    workflowEdge: delegate('workflowEdge'),
-    workflowRun: delegate('workflowRun'),
-    workflowRunStep: delegate('workflowRunStep'),
+    pipeline: delegate('pipeline'),
+    pipelineNode: delegate('pipelineNode'),
+    pipelineEdge: delegate('pipelineEdge'),
+    pipelineRun: delegate('pipelineRun'),
+    pipelineRunStep: delegate('pipelineRunStep'),
     $transaction: async (fn) => fn(client),
     $executeRawUnsafe: async (_query, ...values) => {
       // Emulate the atomic cost UPDATE: last value is runId, first five are deltas.
       const [i, o, tot, dollars, calls, runId] = values as number[] & string[];
-      const run = tables.workflowRun!.get(runId as string);
+      const run = tables.pipelineRun!.get(runId as string);
       if (run) {
         const c = (run.cost as { tokens: Record<string, number>; dollars: number; llmCalls: number }) ?? {
           tokens: { input: 0, output: 0, total: 0 },
@@ -139,9 +139,9 @@ function createFakePrisma(): PrismaClientLike {
   return client;
 }
 
-// ── Run a workflow through the Prisma store ─────────────────────────────────
-const store = new PrismaWorkflowStore(createFakePrisma());
-const engine = new WorkflowEngine({
+// ── Run a pipeline through the Prisma store ─────────────────────────────────
+const store = new PrismaPipelineStore(createFakePrisma());
+const engine = new PipelineEngine({
   store,
   llmFactory: { createModel: () => ({ invoke: async () => ({ content: '' }) }) },
   logger: console,
@@ -161,7 +161,7 @@ engine.registerNode(
   }),
 );
 
-const workflowId = await store.save({
+const pipelineId = await store.save({
   name: 'double-then-branch',
   nodes: [
     { id: 'dbl', nodeType: 'TOOL', key: 'tool.double', label: 'Double', inputs: { n: { kind: 'literal', value: 21 } } },
@@ -176,9 +176,9 @@ const workflowId = await store.save({
   ],
 });
 
-const { runId, done } = await engine.run({ workflowId, context: { userId: 'demo-user' } });
+const { runId, done } = await engine.run({ pipelineId, context: { userId: 'demo-user' } });
 const result = await done;
-const runs = await store.listRuns(workflowId);
+const runs = await store.listRuns(pipelineId);
 
 console.log('\n── Result (Prisma store) ───────────────');
 console.log('runId:', runId);

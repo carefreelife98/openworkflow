@@ -25,11 +25,11 @@ export interface PrismaModelDelegate {
 }
 
 export interface PrismaClientLike {
-  workflow: PrismaModelDelegate;
-  workflowNode: PrismaModelDelegate;
-  workflowEdge: PrismaModelDelegate;
-  workflowRun: PrismaModelDelegate;
-  workflowRunStep: PrismaModelDelegate;
+  pipeline: PrismaModelDelegate;
+  pipelineNode: PrismaModelDelegate;
+  pipelineEdge: PrismaModelDelegate;
+  pipelineRun: PrismaModelDelegate;
+  pipelineRunStep: PrismaModelDelegate;
   $transaction<T>(fn: (tx: PrismaClientLike) => Promise<T>): Promise<T>;
   $executeRawUnsafe(query: string, ...values: unknown[]): Promise<number>;
 }

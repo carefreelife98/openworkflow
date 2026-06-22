@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { WorkflowError } from './state.js';
+import type { PipelineError } from './state.js';
 
-/** Normalize any thrown value into a structured WorkflowError. */
-export function toWorkflowError(err: unknown): WorkflowError {
+/** Normalize any thrown value into a structured PipelineError. */
+export function toPipelineError(err: unknown): PipelineError {
   if (err instanceof z.ZodError) {
     return { kind: 'VALIDATION', code: 'ZOD_PARSE', message: err.message };
   }

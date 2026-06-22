@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/server",
+  "name": "@openpipeline/server",
   "version": "0.1.0",
-  "description": "Transport-agnostic HTTP + SSE handlers for OpenWorkflow, with a tiny Node http adapter.",
+  "description": "Transport-agnostic HTTP + SSE handlers for OpenPipeline, with a tiny Node http adapter.",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/server#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "sse",
     "http",
     "server"
@@ -37,8 +37,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*",
-    "@openworkflow/runtime": "workspace:*"
+    "@openpipeline/core": "workspace:*",
+    "@openpipeline/runtime": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0"

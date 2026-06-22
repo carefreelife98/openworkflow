@@ -1,4 +1,4 @@
-import type { NodeType, NodeInputs, ValueBinding, WorkflowDraft } from '@openworkflow/core';
+import type { NodeType, NodeInputs, ValueBinding, PipelineDraft } from '@openpipeline/core';
 
 /** A node as held in the builder (client id = ReactFlow id = persisted id). */
 export interface BuilderNode {
@@ -48,10 +48,10 @@ export interface BuilderStrings {
 
 export const DEFAULT_STRINGS: BuilderStrings = {
   emptyTitle: 'What automation will you build?',
-  emptyHint: 'Drag nodes from the palette, or describe your workflow in plain language.',
+  emptyHint: 'Drag nodes from the palette, or describe your pipeline in plain language.',
   startLabel: 'Start',
   endLabel: 'End',
   deleteEdge: 'Delete',
 };
 
-export type { ValueBinding, WorkflowDraft, NodeInputs };
+export type { ValueBinding, PipelineDraft, NodeInputs };

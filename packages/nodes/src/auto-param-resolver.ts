@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { CostBundle, WorkflowOutputs } from '@openworkflow/core';
+import type { CostBundle, PipelineOutputs } from '@openpipeline/core';
 
 export interface AutoParamResolveRequest {
   runId: string;
@@ -10,10 +10,10 @@ export interface AutoParamResolveRequest {
   /** Already-resolved explicit inputs, for context. */
   explicitContext: Record<string, unknown>;
   /** Outputs of ancestor nodes, for context. */
-  predecessorOutputs: WorkflowOutputs;
+  predecessorOutputs: PipelineOutputs;
   parentStepId: string;
-  workflowName: string;
-  workflowDescription: string;
+  pipelineName: string;
+  pipelineDescription: string;
   signal?: AbortSignal;
 }
 
@@ -25,7 +25,7 @@ export interface AutoParamResolveResult {
 /**
  * Fills `auto` input slots with an LLM at runtime. Optional: graphs that use no
  * `auto` bindings never need one. A reference implementation can be built on the
- * LlmFactory; OpenWorkflow core does not bundle one (it would couple to a
+ * LlmFactory; OpenPipeline core does not bundle one (it would couple to a
  * provider + needs a cost cap — see the plan's follow-ups).
  */
 export interface AutoParamResolver {

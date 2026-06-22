@@ -1,5 +1,5 @@
 /**
- * OpenWorkflow quickstart — runs a 3-node DAG with zero database and zero LLM
+ * OpenPipeline quickstart — runs a 3-node DAG with zero database and zero LLM
  * API keys. Demonstrates: a custom node, an IF branch, and the engine loop.
  *
  *   upper ──> gate ──true──> shout
@@ -8,10 +8,10 @@
  * The IF condition reads the custom node's output via a `state` binding. Both
  * branches point at a real node (an IF requires a true AND a false target).
  */
-import { WorkflowEngine } from '@openworkflow/runtime';
-import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openworkflow/nodes';
-import { MemoryStore } from '@openworkflow/store-memory';
-import { defineNode } from '@openworkflow/core';
+import { PipelineEngine } from '@openpipeline/runtime';
+import { createIfNodeSpec, createLlmInvokeNodeSpec } from '@openpipeline/nodes';
+import { MemoryStore } from '@openpipeline/store-memory';
+import { defineNode } from '@openpipeline/core';
 import { z } from 'zod';
 
 // A trivial LlmFactory stub so llm.invoke works without API keys.
@@ -25,7 +25,7 @@ const stubLlmFactory = {
   }),
 };
 
-const engine = new WorkflowEngine({
+const engine = new PipelineEngine({
   store: new MemoryStore(),
   llmFactory: stubLlmFactory,
   logger: console,
@@ -50,7 +50,7 @@ engine.registerNode(
   }),
 );
 
-const workflowId = await engine.save({
+const pipelineId = await engine.save({
   name: 'uppercase-then-branch',
   nodes: [
     {
@@ -58,7 +58,7 @@ const workflowId = await engine.save({
       nodeType: 'TOOL',
       key: 'tool.uppercase',
       label: 'Uppercase',
-      inputs: { text: { kind: 'literal', value: 'hello openworkflow' } },
+      inputs: { text: { kind: 'literal', value: 'hello openpipeline' } },
     },
     {
       id: 'gate',
@@ -92,7 +92,7 @@ const workflowId = await engine.save({
   ],
 });
 
-const { runId, done } = await engine.run({ workflowId });
+const { runId, done } = await engine.run({ pipelineId });
 const result = await done;
 
 console.log('\n── Result ──────────────────────────────');

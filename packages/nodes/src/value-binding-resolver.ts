@@ -3,9 +3,9 @@ import {
   NOOP_LOGGER,
   type ValueBinding,
   type NodeInputs,
-  type WorkflowStateType,
+  type PipelineStateType,
   type Logger,
-} from '@openworkflow/core';
+} from '@openpipeline/core';
 
 function getByPath(obj: unknown, path: string): unknown {
   // Normalize `[n]` -> `.n`, then split and drop empty tokens (handles the
@@ -32,7 +32,7 @@ export class ValueBindingResolver {
 
   resolveExplicit(
     inputs: NodeInputs,
-    state: WorkflowStateType,
+    state: PipelineStateType,
     debugCtx?: { nodeId: string; nodeLabel: string },
   ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
@@ -52,7 +52,7 @@ export class ValueBindingResolver {
     return result;
   }
 
-  resolveOne(binding: ValueBinding, state: WorkflowStateType): unknown {
+  resolveOne(binding: ValueBinding, state: PipelineStateType): unknown {
     switch (binding.kind) {
       case 'literal':
         return binding.value;

@@ -1,4 +1,4 @@
-// @openworkflow/core — framework-agnostic execution kernel + contracts.
+// @openpipeline/core — framework-agnostic execution kernel + contracts.
 // Zero NestJS, zero Prisma, zero proprietary deps.
 
 export * from './enums.js';

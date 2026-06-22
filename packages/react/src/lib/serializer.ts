@@ -34,7 +34,7 @@ export function buildDisplayNodes(
   };
   const nodeRfList: RfNode[] = stateNodes.map((n) => ({
     id: n.id,
-    type: 'workflowNode',
+    type: 'pipelineNode',
     position: { x: n.positionX ?? 300, y: n.positionY ?? 200 },
     data: { node: n },
   }));

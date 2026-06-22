@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/runtime",
+  "name": "@openpipeline/runtime",
   "version": "0.1.0",
-  "description": "WorkflowEngine orchestrator for OpenWorkflow — drives a run end to end over the kernel.",
+  "description": "PipelineEngine orchestrator for OpenPipeline — drives a run end to end over the kernel.",
   "license": "MIT",
   "author": "carefreelife98",
   "homepage": "https://github.com/carefreelife98/openworkflow/tree/main/packages/runtime#readme",
@@ -14,7 +14,7 @@
     "url": "https://github.com/carefreelife98/openworkflow/issues"
   },
   "keywords": [
-    "workflow",
+    "pipeline",
     "engine",
     "langgraph",
     "orchestration"
@@ -37,8 +37,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@openworkflow/core": "workspace:*",
-    "@openworkflow/nodes": "workspace:*"
+    "@openpipeline/core": "workspace:*",
+    "@openpipeline/nodes": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
