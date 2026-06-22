@@ -1,7 +1,7 @@
 {
-  "name": "@openworkflow/nodes",
+  "name": "@openworkflow/mcp",
   "version": "0.1.0",
-  "description": "Execution kernel (compiler, node-runner, registry, binding resolver) and built-in IF/LLM nodes for OpenWorkflow.",
+  "description": "Optional MCP integration for OpenWorkflow: JSON-Schema→Zod converter, MCP client factory, env catalog loader, and mcp:* node resolver.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,7 +20,8 @@
   "dependencies": {
     "@openworkflow/core": "workspace:*",
     "@langchain/core": "^1.1.39",
-    "@langchain/langgraph": "^1.2.8",
+    "@langchain/mcp-adapters": "^1.1.3",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
   },
   "publishConfig": {

@@ -85,6 +85,7 @@ pnpm install && pnpm build && pnpm example
 | [`@openworkflow/nodes`](./packages/nodes) | Execution kernel (compiler, node-runner, registry, binding resolver) + built-in `IF` / `LLM` nodes. |
 | [`@openworkflow/runtime`](./packages/runtime) | `WorkflowEngine` — orchestrates a run end to end over the kernel. |
 | [`@openworkflow/store-memory`](./packages/store-memory) | In-memory `WorkflowStore` + `StepRecorder` reference implementation. |
+| [`@openworkflow/mcp`](./packages/mcp) | Optional MCP integration: JSON-Schema→Zod converter, client factory, env catalog loader, `mcp:*` node resolver, and the `CatalogPolicy` hook. |
 
 ## Bring your own
 
@@ -104,9 +105,36 @@ guiding rule: **the kernel depends on interfaces, not frameworks.** No NestJS, n
 Prisma, no proprietary libraries in the core packages — verified by the dependency
 tree (only `@langchain/*` + `zod`).
 
+### MCP tools
+
+```ts
+import { createEnvCatalogLoader, McpNodeResolverImpl } from '@openworkflow/mcp';
+
+const engine = new WorkflowEngine({
+  store, llmFactory,
+  catalogLoader: createEnvCatalogLoader({
+    servers: [
+      { key: 'github', transportType: 'stdio', command: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-github'],
+        authType: 'none', env: { GITHUB_TOKEN: process.env.GH_TOKEN! } },
+    ],
+  }),
+  mcpNodeResolver: new McpNodeResolverImpl(),
+});
+// then use a node with key `mcp:github:<tool>`
+```
+
+No multi-tenancy by default (personal direct use). To add admin curation, tool
+allowlists, or per-user OAuth, pass a `CatalogPolicy`
+(`filterProviders` / `filterTools` / `resolveToken`) to the loader — the engine
+never sees `companyId` or `scope`.
+
+> Note: MCP servers whose tool schemas use `if/then/else`, `dependentSchemas`,
+> external `$ref`, or `not` cannot be converted to Zod and are skipped (logged).
+> This is a known limit of the single-step JSON-Schema→Zod conversion.
+
 ## Roadmap
 
-- `@openworkflow/mcp` — MCP catalog loader + JSON-Schema→Zod converter + `mcp:*` resolver
 - `@openworkflow/store-prisma` — Postgres persistence adapter
 - `@openworkflow/server` — framework-agnostic HTTP + SSE handlers
 - `@openworkflow/react` — the visual DAG builder as a controlled component library

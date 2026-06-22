@@ -1,5 +1,5 @@
 {
-  "name": "@openworkflow/example-quickstart",
+  "name": "@openworkflow/example-mcp",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "@openworkflow/core": "workspace:*",
     "@openworkflow/nodes": "workspace:*",
     "@openworkflow/runtime": "workspace:*",
-    "@openworkflow/store-memory": "workspace:*",
-    "zod": "^4.3.6"
+    "@openworkflow/mcp": "workspace:*",
+    "@openworkflow/store-memory": "workspace:*"
   }
 }
