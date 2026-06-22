@@ -25,6 +25,8 @@ jobs:
         run: pnpm build
       - name: Typecheck all packages
         run: pnpm typecheck
+      - name: Run tests
+        run: pnpm test
       - name: Run quickstart kernel (no secrets, no DB)
         run: pnpm example
 

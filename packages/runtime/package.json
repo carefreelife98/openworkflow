@@ -40,6 +40,10 @@
     "@openpipeline/core": "workspace:*",
     "@openpipeline/nodes": "workspace:*"
   },
+  "devDependencies": {
+    "@openpipeline/store-memory": "workspace:*",
+    "zod": "^4.3.6"
+  },
   "publishConfig": {
     "access": "public"
   }
