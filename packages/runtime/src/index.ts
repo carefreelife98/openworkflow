@@ -1,0 +1,244 @@
+import {
+  ZERO_COST,
+  NOOP_LOGGER,
+  RUN_DELIVERY_MODE,
+  WorkflowAbortedError,
+  type WorkflowStore,
+  type StepRecorder,
+  type LlmFactory,
+  type CatalogLoader,
+  type McpNodeResolver,
+  type Logger,
+  type RunContext,
+  type RunDeliveryMode,
+  type RunStatus,
+  type WorkflowDraft,
+  type RunSummary,
+  type WorkflowStateType,
+  type WorkflowOutputs,
+  type CostBundle,
+  type CatalogResult,
+  type WorkflowWithGraph,
+  type NodeSpec,
+} from '@openworkflow/core';
+import {
+  NodeSpecRegistry,
+  ValueBindingResolver,
+  WorkflowCompiler,
+  type AutoParamResolver,
+} from '@openworkflow/nodes';
+
+export interface WorkflowEngineOptions {
+  store: WorkflowStore & StepRecorder;
+  llmFactory: LlmFactory;
+  logger?: Logger;
+  /** Optional — required only for graphs with `auto`-bound slots. */
+  autoParamResolver?: AutoParamResolver;
+  /** Optional — required only for graphs with `mcp:` nodes. */
+  catalogLoader?: CatalogLoader;
+  /** Optional — resolves `mcp:` node keys to specs. Provide with catalogLoader. */
+  mcpNodeResolver?: McpNodeResolver;
+  /** Optional graph validator run before compilation. Throw to reject. */
+  validate?: (graph: WorkflowWithGraph, ctx: { userId?: string; tenantId?: string }) => Promise<void> | void;
+  /** Hard per-run wall-clock timeout. Default 600_000ms. */
+  runTimeoutMs?: number;
+}
+
+export interface RunOptions {
+  workflowId: string;
+  deliveryMode?: RunDeliveryMode;
+  triggerSource?: string;
+  context?: RunContext;
+  /** External abort signal; linked to the internal controller. */
+  signal?: AbortSignal;
+}
+
+export interface RunResult {
+  runId: string;
+  status: RunStatus;
+  outputs: WorkflowOutputs;
+  cost: CostBundle;
+  error?: { kind: string; message: string };
+}
+
+export interface RunHandle {
+  runId: string;
+  done: Promise<RunResult>;
+}
+
+/**
+ * Orchestrates a workflow run end to end over the kernel. A plain class that
+ * takes the interface bag — no NestJS, no Prisma, no lifecycle hooks. Rewritten
+ * (not extracted) from Mate-X's WorkflowRunnerService, preserving: per-run MCP
+ * catalog load + cleanup, abort propagation, and stale-step finalization.
+ */
+export class WorkflowEngine {
+  private readonly registry: NodeSpecRegistry;
+  private readonly compiler: WorkflowCompiler;
+  private readonly store: WorkflowStore & StepRecorder;
+  private readonly logger: Logger;
+  private readonly runTimeoutMs: number;
+  private readonly catalogLoader?: CatalogLoader;
+  private readonly inFlight = new Map<string, AbortController>();
+
+  constructor(private readonly options: WorkflowEngineOptions) {
+    this.store = options.store;
+    this.logger = options.logger ?? NOOP_LOGGER;
+    this.runTimeoutMs = options.runTimeoutMs ?? 600_000;
+    this.catalogLoader = options.catalogLoader;
+    this.registry = new NodeSpecRegistry(options.mcpNodeResolver);
+    this.compiler = new WorkflowCompiler({
+      registry: this.registry,
+      bindingResolver: new ValueBindingResolver(this.logger),
+      stepRecorder: this.store,
+      llmFactory: options.llmFactory,
+      logger: this.logger,
+      autoParamResolver: options.autoParamResolver,
+      validate: options.validate,
+    });
+  }
+
+  /** Register a node spec (built-in or custom). Chainable. */
+  registerNode(spec: NodeSpec): this {
+    this.registry.register(spec);
+    return this;
+  }
+
+  /** Persist a workflow draft; returns its id. */
+  save(draft: WorkflowDraft): Promise<string> {
+    return this.store.save(draft);
+  }
+
+  listRuns(workflowId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
+    return this.store.listRuns(workflowId, opts);
+  }
+
+  /** Abort an in-flight run by id. No-op if the run is unknown or finished. */
+  abort(runId: string): void {
+    this.inFlight.get(runId)?.abort();
+  }
+
+  /**
+   * Start a run. Returns immediately with the runId and a `done` promise that
+   * settles when the run finishes (success / failure / abort). Both
+   * fire-and-forget (INVOKE) and await-the-result usage are supported.
+   */
+  async run(opts: RunOptions): Promise<RunHandle> {
+    const graph = await this.store.load(opts.workflowId);
+    const deliveryMode = opts.deliveryMode ?? RUN_DELIVERY_MODE.INVOKE;
+
+    const { runId } = await this.store.createRun({
+      workflowId: opts.workflowId,
+      userId: opts.context?.userId,
+      deliveryMode,
+      triggerSource: opts.triggerSource ?? 'MANUAL',
+      input: {},
+    });
+
+    const controller = new AbortController();
+    this.inFlight.set(runId, controller);
+    if (opts.signal) {
+      if (opts.signal.aborted) controller.abort();
+      else opts.signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+
+    const done = this.execute(graph, runId, deliveryMode, opts.context, controller).finally(() => {
+      this.inFlight.delete(runId);
+    });
+
+    return { runId, done };
+  }
+
+  private async execute(
+    graph: Awaited<ReturnType<WorkflowStore['load']>>,
+    runId: string,
+    deliveryMode: RunDeliveryMode,
+    context: RunContext | undefined,
+    controller: AbortController,
+  ): Promise<RunResult> {
+    const hasMcpNode = graph.nodes.some((n) => n.key.startsWith('mcp:'));
+    let mcpCatalog: CatalogResult | undefined;
+    const timer = setTimeout(() => controller.abort(), this.runTimeoutMs);
+
+    try {
+      if (hasMcpNode) {
+        if (!this.catalogLoader) {
+          throw new Error('Graph has MCP nodes but no catalogLoader was configured.');
+        }
+        mcpCatalog = await this.catalogLoader.load({ userId: context?.userId, tenantId: context?.tenantId });
+      }
+
+      const mcpCatalogCache = mcpCatalog?.providers as readonly unknown[] | undefined;
+
+      this.compiler.setResolveContext({
+        userId: context?.userId,
+        tenantId: context?.tenantId,
+        mcpCatalogCache,
+      });
+
+      const compiled = await this.compiler.compile(graph);
+
+      const initialState: WorkflowStateType = {
+        meta: {
+          runId,
+          workflowId: graph.workflow.id,
+          workflowName: graph.workflow.name ?? '',
+          workflowDescription: graph.workflow.description ?? '',
+          deliveryMode,
+          context,
+          mcpCatalogCache,
+        },
+        outputs: {},
+        nodeMeta: {},
+        cost: ZERO_COST,
+        events: [],
+      };
+
+      const final = (await compiled.app.invoke(initialState, {
+        configurable: { signal: controller.signal },
+        recursionLimit: 100,
+      })) as WorkflowStateType;
+
+      const outputs = final.outputs ?? {};
+      const cost = final.cost ?? ZERO_COST;
+
+      await this.store.completeRun(runId, { status: 'SUCCESS', output: outputs, cost, lastState: final });
+      return { runId, status: 'SUCCESS', outputs, cost };
+    } catch (err) {
+      const aborted = err instanceof WorkflowAbortedError || controller.signal.aborted;
+      const status: RunStatus = aborted ? 'ABORTED' : 'FAILED';
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`[WorkflowEngine] run ${status}: ${message}`);
+
+      await this.store.finalizeStaleSteps(runId);
+      await this.store.completeRun(runId, {
+        status,
+        error: { kind: aborted ? 'ABORTED' : 'RUNTIME', code: 'RUN', message },
+      });
+      return {
+        runId,
+        status,
+        outputs: {},
+        cost: ZERO_COST,
+        error: { kind: aborted ? 'ABORTED' : 'RUNTIME', message },
+      };
+    } finally {
+      clearTimeout(timer);
+      if (mcpCatalog) {
+        try {
+          await mcpCatalog.cleanup();
+        } catch (cleanupErr) {
+          this.logger.warn('[WorkflowEngine] MCP catalog cleanup failed', { cleanupErr });
+        }
+      }
+    }
+  }
+}
+
+export type {
+  WorkflowStore,
+  StepRecorder,
+  LlmFactory,
+  CatalogLoader,
+  RunContext,
+} from '@openworkflow/core';

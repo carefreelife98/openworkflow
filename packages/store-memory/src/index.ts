@@ -1,0 +1,239 @@
+import {
+  type WorkflowStore,
+  type StepRecorder,
+  type WorkflowWithGraph,
+  type WorkflowDraft,
+  type RunCreate,
+  type RunComplete,
+  type RunSummary,
+  type StepStart,
+  type StepFinish,
+  type WorkflowRow,
+  type WorkflowNodeRow,
+  type WorkflowEdgeRow,
+  type CostBundle,
+  type RunStatus,
+  type RunStepStatus,
+  mergeCost,
+} from '@openworkflow/core';
+
+interface StoredRun {
+  id: string;
+  workflowId: string;
+  userId?: string;
+  status: RunStatus;
+  cost: CostBundle;
+  input?: unknown;
+  output?: unknown;
+  startedAt: Date;
+  finishedAt?: Date;
+}
+
+interface StoredStep {
+  id: string;
+  runId: string;
+  nodeId: string;
+  nodeLabel: string;
+  parentStepId?: string;
+  sequenceIndex: number;
+  status: RunStepStatus;
+  input?: unknown;
+  output?: unknown;
+  cost?: CostBundle;
+  startedAt: Date;
+  finishedAt?: Date;
+}
+
+let counter = 0;
+function genId(prefix: string): string {
+  counter += 1;
+  return `${prefix}_${counter.toString(36)}_${Math.floor(performance.now()).toString(36)}`;
+}
+
+/**
+ * In-memory reference implementation of WorkflowStore + StepRecorder. Makes
+ * "install + run a workflow" work with zero database. Proves the persistence
+ * interfaces are real.
+ *
+ * Step sequencing is guarded by a promise-chain mutex: LangGraph fan-in can call
+ * `start()` concurrently, and `sequenceIndex` must be assigned atomically or
+ * parallel branches collide on sequence numbers.
+ */
+export class MemoryStore implements WorkflowStore, StepRecorder {
+  private readonly workflows = new Map<string, WorkflowRow>();
+  private readonly nodes = new Map<string, WorkflowNodeRow[]>();
+  private readonly edges = new Map<string, WorkflowEdgeRow[]>();
+  private readonly runs = new Map<string, StoredRun>();
+  private readonly steps = new Map<string, StoredStep>();
+
+  // Mutex: serialize sequenceIndex assignment per run.
+  private seqLock: Promise<unknown> = Promise.resolve();
+  private readonly seqByRun = new Map<string, number>();
+
+  // ── WorkflowStore ─────────────────────────────────────────────────────────
+
+  async load(workflowId: string): Promise<WorkflowWithGraph> {
+    const workflow = this.workflows.get(workflowId);
+    if (!workflow) throw new Error(`Workflow not found: ${workflowId}`);
+    return {
+      workflow,
+      nodes: this.nodes.get(workflowId) ?? [],
+      edges: this.edges.get(workflowId) ?? [],
+    };
+  }
+
+  async save(draft: WorkflowDraft): Promise<string> {
+    const now = new Date();
+    const id = draft.id ?? genId('wf');
+    const existing = this.workflows.get(id);
+    const workflow: WorkflowRow = {
+      id,
+      name: draft.name,
+      description: draft.description,
+      outputJsonSchema: draft.outputJsonSchema,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    this.workflows.set(id, workflow);
+    this.nodes.set(
+      id,
+      draft.nodes.map((n) => ({ ...n, workflowId: id })),
+    );
+    this.edges.set(
+      id,
+      draft.edges.map((e) => ({ ...e, workflowId: id })),
+    );
+    return id;
+  }
+
+  async createRun(run: RunCreate): Promise<{ runId: string; startedAt: Date }> {
+    const runId = genId('run');
+    const startedAt = new Date();
+    this.runs.set(runId, {
+      id: runId,
+      workflowId: run.workflowId,
+      userId: run.userId,
+      status: 'RUNNING',
+      cost: { tokens: { input: 0, output: 0, total: 0 }, dollars: 0, llmCalls: 0 },
+      input: run.input,
+      startedAt,
+    });
+    this.seqByRun.set(runId, 0);
+    return { runId, startedAt };
+  }
+
+  async completeRun(runId: string, result: RunComplete): Promise<void> {
+    const run = this.runs.get(runId);
+    if (!run) return;
+    run.status = result.status;
+    run.output = result.output;
+    run.finishedAt = new Date();
+    if (result.cost) run.cost = mergeCost(run.cost, result.cost);
+  }
+
+  async updateRunCostAtomic(runId: string, delta: CostBundle): Promise<void> {
+    const run = this.runs.get(runId);
+    if (!run) return;
+    run.cost = mergeCost(run.cost, delta);
+  }
+
+  async listRuns(workflowId: string, opts?: { limit?: number }): Promise<RunSummary[]> {
+    const all = Array.from(this.runs.values())
+      .filter((r) => r.workflowId === workflowId)
+      .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+    const limited = opts?.limit ? all.slice(0, opts.limit) : all;
+    return limited.map((r) => ({
+      id: r.id,
+      workflowId: r.workflowId,
+      status: r.status,
+      startedAt: r.startedAt,
+      finishedAt: r.finishedAt,
+      cost: r.cost,
+    }));
+  }
+
+  // ── StepRecorder ──────────────────────────────────────────────────────────
+
+  async start(step: StepStart): Promise<string> {
+    const seq = await this.nextSeq(step.runId);
+    const id = genId('step');
+    this.steps.set(id, {
+      id,
+      runId: step.runId,
+      nodeId: step.nodeId,
+      nodeLabel: step.nodeLabel,
+      sequenceIndex: seq,
+      status: 'RUNNING',
+      startedAt: new Date(),
+    });
+    return id;
+  }
+
+  async finish(stepId: string, result: StepFinish): Promise<void> {
+    const step = this.steps.get(stepId);
+    if (!step) return;
+    step.status = result.status;
+    step.input = result.input;
+    step.output = result.output;
+    step.cost = result.cost;
+    step.finishedAt = new Date();
+  }
+
+  async startChild(params: {
+    runId: string;
+    parentStepId: string;
+    nodeId: string;
+    input: unknown;
+  }): Promise<string> {
+    const seq = await this.nextSeq(params.runId);
+    const id = genId('step');
+    this.steps.set(id, {
+      id,
+      runId: params.runId,
+      nodeId: params.nodeId,
+      nodeLabel: params.nodeId,
+      parentStepId: params.parentStepId,
+      sequenceIndex: seq,
+      status: 'RUNNING',
+      input: params.input,
+      startedAt: new Date(),
+    });
+    return id;
+  }
+
+  async finishChild(childStepId: string, result: StepFinish): Promise<void> {
+    return this.finish(childStepId, result);
+  }
+
+  async finalizeStaleSteps(runId: string): Promise<void> {
+    for (const step of this.steps.values()) {
+      if (step.runId === runId && step.status === 'RUNNING') {
+        step.status = 'FAILED';
+        step.finishedAt = new Date();
+      }
+    }
+  }
+
+  // ── Internals ─────────────────────────────────────────────────────────────
+
+  /** Atomically assign the next sequence index for a run (fan-in safe). */
+  private nextSeq(runId: string): Promise<number> {
+    const next = this.seqLock.then(() => {
+      const current = this.seqByRun.get(runId) ?? 0;
+      this.seqByRun.set(runId, current + 1);
+      return current;
+    });
+    // Keep the chain alive even if a caller's continuation rejects.
+    this.seqLock = next.catch(() => undefined);
+    return next;
+  }
+
+  // ── Test/inspection helpers ─────────────────────────────────────────────────
+
+  getSteps(runId: string): ReadonlyArray<{ nodeLabel: string; status: RunStepStatus; sequenceIndex: number }> {
+    return Array.from(this.steps.values())
+      .filter((s) => s.runId === runId)
+      .sort((a, b) => a.sequenceIndex - b.sequenceIndex)
+      .map((s) => ({ nodeLabel: s.nodeLabel, status: s.status, sequenceIndex: s.sequenceIndex }));
+  }
+}

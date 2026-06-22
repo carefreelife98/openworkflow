@@ -1,0 +1,33 @@
+import type { z } from 'zod';
+import type { CostBundle, WorkflowOutputs } from '@openworkflow/core';
+
+export interface AutoParamResolveRequest {
+  runId: string;
+  nodeId: string;
+  nodeLabel: string;
+  /** Schema containing only the `auto` slots still to fill. */
+  remainingSchema: z.ZodType;
+  /** Already-resolved explicit inputs, for context. */
+  explicitContext: Record<string, unknown>;
+  /** Outputs of ancestor nodes, for context. */
+  predecessorOutputs: WorkflowOutputs;
+  parentStepId: string;
+  workflowName: string;
+  workflowDescription: string;
+  signal?: AbortSignal;
+}
+
+export interface AutoParamResolveResult {
+  params: Record<string, unknown>;
+  cost: CostBundle;
+}
+
+/**
+ * Fills `auto` input slots with an LLM at runtime. Optional: graphs that use no
+ * `auto` bindings never need one. A reference implementation can be built on the
+ * LlmFactory; OpenWorkflow core does not bundle one (it would couple to a
+ * provider + needs a cost cap — see the plan's follow-ups).
+ */
+export interface AutoParamResolver {
+  resolve(req: AutoParamResolveRequest): Promise<AutoParamResolveResult>;
+}
