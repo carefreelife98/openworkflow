@@ -19,6 +19,7 @@
     "typecheck": "pnpm -r --filter \"./packages/*\" typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ci": "vitest run --coverage",
     "coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

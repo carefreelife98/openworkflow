@@ -17,6 +17,21 @@ export default defineConfig({
       reporter: ['text', 'html'],
       include: ['packages/*/src/**/*.{ts,tsx}'],
       exclude: ['packages/*/src/generated/**'],
+      // Per-package floors set just BELOW the measured coverage of packages
+      // that have tests — a regression gate, not an aspiration. Packages whose
+      // hardest code is the LangGraph integration (nodes, runtime) are covered
+      // by the runtime integration test rather than unit-gated, and the React
+      // canvas components (DOM render) are a tracked follow-up — so they are
+      // intentionally not floored here yet. Raise these as coverage grows.
+      thresholds: {
+        'packages/core/src/**': { lines: 55, functions: 25, branches: 70 },
+        'packages/mcp/src/**': { lines: 55, functions: 40, branches: 55 },
+        'packages/server/src/**': { lines: 95, functions: 95, branches: 80 },
+        'packages/store-memory/src/**': { lines: 95, functions: 90, branches: 85 },
+        'packages/store-prisma/src/**': { lines: 95, functions: 95, branches: 90 },
+        'packages/react/src/lib/**': { lines: 90, functions: 90, branches: 90 },
+        'packages/react/src/store/**': { lines: 95, functions: 95, branches: 90 },
+      },
     },
   },
 });
